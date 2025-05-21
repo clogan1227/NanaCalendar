@@ -1,70 +1,148 @@
-# Getting Started with Create React App
+# Nana's Digital Photo Calendar
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 🌟 Project Overview
 
-## Available Scripts
+This project is a personalized digital calendar application designed for my Nana. It aims to provide an always-on display (e.g., on a vertical monitor/TV) featuring a rotating display of personal photos and a comprehensive calendar with events, holidays, and reminders. The application will allow for photo uploads and calendar management, with potential integration with existing phone calendar services.
 
-In the project directory, you can run:
+## ✨ Core Features
 
-### `npm start`
+*   **Photo Display:**
+    *   Top section of the screen dedicated to displaying personal photos.
+    *   Ability to upload photos.
+    *   Photos rotate in a slideshow format.
+*   **Calendar Display:**
+    *   Bottom section of the screen displaying a monthly calendar.
+    *   Shows events, holidays, and reminders.
+    *   Ability to add/edit/delete personal events.
+*   **Potential Integrations:**
+    *   Sync with Google Calendar (or other phone calendar services) for events.
+    *   Fetch photos from cloud services (e.g., Google Photos).
+    *   Display public holidays via an API.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🛠️ Tech Stack
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+*   **Frontend:** React
+    *   State Management: React Context API / Zustand (to be decided based on complexity)
+    *   Calendar Library: [React Big Calendar](https://github.com/jquense/react-big-calendar) or [FullCalendar for React](https://fullcalendar.io/docs/react) (to be evaluated)
+    *   Photo Slideshow: Custom component or a library like `react-slideshow-image`.
+*   **Backend (BaaS):** Firebase
+    *   **Firestore:** NoSQL database for storing calendar events, photo metadata (URLs).
+    *   **Firebase Storage:** For storing uploaded photo files.
+    *   **Firebase Authentication:** (Optional, for managing access if needed, e.g., for an admin upload interface).
+*   **Styling:** CSS Modules / Styled Components / Tailwind CSS (to be decided)
+*   **Deployment Target (Conceptual):** Raspberry Pi / Mini-PC connected to a vertical monitor, running the web application in a browser (kiosk mode).
 
-### `npm test`
+## ⚙️ Project Setup & Installation
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Prerequisites
 
-### `npm run build`
+*   Node.js (v18.x or later recommended)
+*   npm (v9.x or later) or yarn
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Installation
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1.  **Clone the repository (if applicable):**
+    ```bash
+    git clone <your-repository-url>
+    cd <repository-name>
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+3.  **Firebase Setup:**
+    *   Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project.
+    *   In your Firebase project, navigate to Project Settings and add a new "Web app" (</> icon).
+    *   Firebase will provide you with a configuration object. Copy these credentials.
+    *   Create a `.env` file in the root of your project (e.g., `nana-calendar/.env`) and add your Firebase configuration keys. **Do NOT commit this file to Git.**
+        ```env
+        REACT_APP_FIREBASE_API_KEY="YOUR_API_KEY"
+        REACT_APP_FIREBASE_AUTH_DOMAIN="YOUR_AUTH_DOMAIN"
+        REACT_APP_FIREBASE_PROJECT_ID="YOUR_PROJECT_ID"
+        REACT_APP_FIREBASE_STORAGE_BUCKET="YOUR_STORAGE_BUCKET"
+        REACT_APP_FIREBASE_MESSAGING_SENDER_ID="YOUR_MESSAGING_SENDER_ID"
+        REACT_APP_FIREBASE_APP_ID="YOUR_APP_ID"
+        ```
+    *   Ensure your `src/firebase.js` (or `src/services/firebase.js`) file is set up to use these environment variables:
+        ```javascript
+        // src/firebase.js
+        import { initializeApp } from "firebase/app";
+        import { getFirestore } from "firebase/firestore";
+        import { getStorage } from "firebase/storage";
+        // import { getAuth } from "firebase/auth"; // If using authentication
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+        const firebaseConfig = {
+          apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+          authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+          projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+          storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+          messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+          appId: process.env.REACT_APP_FIREBASE_APP_ID,
+        };
 
-### `npm run eject`
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        // const auth = getAuth(app); // If using authentication
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+        export { db, storage /*, auth */ };
+        ```
+    *   In the Firebase console:
+        *   Enable **Firestore Database**. Start in **test mode** for initial development (remember to secure rules later!).
+        *   Enable **Firebase Storage**. Set up basic security rules (similar to Firestore, start with test mode and secure later).
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+4.  **Running the Development Server:**
+    ```bash
+    npm start
+    # or
+    yarn start
+    ```
+    This will open the app in your default browser, usually at `http://localhost:3000`.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🎨 Project Structure (Example)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+NanaCalendar/
 
-## Learn More
+├── .git/
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+├── node_modules/
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+├── public/
 
-### Code Splitting
+│   ├── index.html
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+│   └── ...
 
-### Analyzing the Bundle Size
+├── src/
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+│   ├── assets/             # Images, fonts, etc.
 
-### Making a Progressive Web App
+│   ├── components/         # Reusable UI components
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+│   │   ├── PhotoDisplay/
 
-### Advanced Configuration
+│   │   └── CalendarView/
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+│   ├── services/           # Firebase config and service functions
 
-### Deployment
+│   │   └── firebase.js
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+│   ├── App.js              # Main application component
 
-### `npm run build` fails to minify
+│   ├── App.css             # Main app styles
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+│   ├── index.js            # Entry point
+
+│   └── index.css           # Global styles
+
+├── .env                    # Firebase API keys (DO NOT COMMIT)
+
+├── .gitignore
+
+├── package.json
+
+├── README.md
+
+└── yarn.lock or package-lock.json
