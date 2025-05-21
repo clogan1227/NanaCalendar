@@ -104,24 +104,45 @@ This project is a personalized digital calendar application designed for my Nana
 ## 🎨 Project Structure (Example)
 
 NanaCalendar/
+
 ├── .git/
+
 ├── node_modules/
+
 ├── public/
+
 │   ├── index.html
+
 │   └── ...
+
 ├── src/
+
 │   ├── assets/             # Images, fonts, etc.
+
 │   ├── components/         # Reusable UI components
+
 │   │   ├── PhotoDisplay/
+
 │   │   └── CalendarView/
+
 │   ├── services/           # Firebase config and service functions
+
 │   │   └── firebase.js
+
 │   ├── App.js              # Main application component
+
 │   ├── App.css             # Main app styles
+
 │   ├── index.js            # Entry point
+
 │   └── index.css           # Global styles
+
 ├── .env                    # Firebase API keys (DO NOT COMMIT)
+
 ├── .gitignore
+
 ├── package.json
+
 ├── README.md
+
 └── yarn.lock or package-lock.json
