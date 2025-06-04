@@ -1,0 +1,29 @@
+.weather-display {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Or left/right as preferred */
+    margin-top: 10px; /* Space from date/time */
+    font-size: 1.5em;
+    color: white;
+}
+
+.weather-icon {
+    width: 50px;
+    height: 50px;
+    margin-right: 10px;
+}
+
+.temperature {
+    font-weight: bold;
+}
+
+.weather-description {
+    font-size: 0.8em;
+    margin-left: 10px;
+    text-transform: capitalize;
+}
+
+.weather-display.error {
+    color: #ff8d8d;
+    font-size: 0.9em;
+}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './PhotoDisplay.css';
+import InfoOverlay from '../InfoOverlay/InfoOverlay';
 import { db } from '../../firebase';
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
 const FADE_DURATION_MS = 1000; // 1 second
-const SLIDESHOW_VISIBLE_DURATION_MS = 5000; // 10 seconds
+const SLIDESHOW_VISIBLE_DURATION_MS = 10000; // 10 seconds
 
 function PhotoDisplay() {
     const [photos, setPhotos] = useState([]); // To store photo data from Firestore
@@ -86,7 +87,7 @@ function PhotoDisplay() {
                 // If the index isn't going to change due to photos array adjustment,
                 // but photos array itself might have changed (or it's initial load),
                 // ensure current image is visible.
-                setImageOpacity(1);
+                // setImageOpacity(1);
             }
             // If currentPhotoIndex *will* change due to the setCurrentPhotoIndex above,
             // then "Effect 2" (which depends on currentPhotoIndex) will run and handle the fade-in.
@@ -132,9 +133,12 @@ function PhotoDisplay() {
 
             const fadeInTimer = setTimeout(() => {
                 setImageOpacity(1); // Trigger the fade-in
-            }, 10); // A small delay (e.g., 10-50ms) is often enough
+            }, 50); // A small delay (e.g., 10-50ms) is often enough
 
             return () => clearTimeout(fadeInTimer);
+        } else if (!isLoading && photos.length === 0) {
+            // If all photos are removed, ensure opacity is reset (though no image will show)
+            setImageOpacity(1); // Or 0, depending on desired "empty" state appearance
         }
     // This effect runs when currentPhotoIndex changes, ensuring the new image fades in.
     }, [currentPhotoIndex, isLoading, photos.length]); // photos.length in case photos disappear
@@ -161,20 +165,21 @@ function PhotoDisplay() {
 
     return (
         <div className="photo-display-section">
-        {currentPhoto ? (
-            <img
-                key={currentPhoto.id} // Important for React to see it as a new element
-                src={currentPhoto.imageUrl}
-                alt={currentPhoto.fileName || `Slide ${currentPhotoIndex + 1}`}
-                className="displayed-photo"
-                style={{
-                    opacity: imageOpacity,
-                    transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`
-                }}
-            />
-        ) : (
-            <p>Error displaying photo.</p>
-        )}
+            <InfoOverlay />
+            {currentPhoto ? (
+                <img
+                    key={currentPhoto.id} // Important for React to see it as a new element
+                    src={currentPhoto.imageUrl}
+                    alt={currentPhoto.fileName || `Slide ${currentPhotoIndex + 1}`}
+                    className="displayed-photo"
+                    style={{
+                        opacity: imageOpacity,
+                        transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`
+                    }}
+                />
+            ) : (
+                <p>Error displaying photo.</p>
+            )}
         </div>
     );
 }

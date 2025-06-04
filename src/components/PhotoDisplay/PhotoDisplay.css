@@ -1,6 +1,6 @@
 .photo-display-section {
     background-color: #333;
-    height: 40%; /* This is the height of the photo portion, adjust as needed */
+    height: 60%; /* This is the height of the photo portion, adjust as needed */
     overflow: hidden;
     box-sizing: border-box;
     position: relative;
