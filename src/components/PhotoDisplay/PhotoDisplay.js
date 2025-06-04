@@ -143,6 +143,18 @@ function PhotoDisplay() {
     // This effect runs when currentPhotoIndex changes, ensuring the new image fades in.
     }, [currentPhotoIndex, isLoading, photos.length]); // photos.length in case photos disappear
 
+    const formatPhotoTimestamp = (timestamp, label = "Taken") => {
+        if (!timestamp || typeof timestamp.toDate !== 'function') {
+            return null; // Return null if no valid timestamp
+        }
+        // Firestore timestamps need to be converted to JS Date objects
+        const date = timestamp.toDate();
+        const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
+
+        return `${date.toLocaleDateString(undefined, dateOptions)} ${date.toLocaleTimeString(undefined, timeOptions)}`;
+    };
+
     if (isLoading) {
         return (
             <div className="photo-display-section">
@@ -167,16 +179,31 @@ function PhotoDisplay() {
         <div className="photo-display-section">
             <InfoOverlay />
             {currentPhoto ? (
-                <img
-                    key={currentPhoto.id} // Important for React to see it as a new element
-                    src={currentPhoto.imageUrl}
-                    alt={currentPhoto.fileName || `Slide ${currentPhotoIndex + 1}`}
-                    className="displayed-photo"
-                    style={{
-                        opacity: imageOpacity,
-                        transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`
-                    }}
-                />
+                <>
+                    <img
+                        key={currentPhoto.id} // Important for React to see it as a new element
+                        src={currentPhoto.imageUrl}
+                        alt={currentPhoto.fileName || `Slide ${currentPhotoIndex + 1}`}
+                        className="displayed-photo"
+                        style={{
+                            opacity: imageOpacity,
+                            transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`
+                        }}
+                    />
+                    {(currentPhoto.fileName || currentPhoto.dateTaken) && ( // Only render overlay if there's a filename OR a dateTaken
+                            <div className="photo-metadata-overlay">
+                                {currentPhoto.fileName && ( // Only render filename if it exists
+                                    <div className="photo-filename">{currentPhoto.fileName}</div>
+                                )}
+                                {currentPhoto.dateTaken && ( // Only render date if dateTaken exists
+                                    <div className="photo-capture-date">
+                                        Taken: {formatPhotoTimestamp(currentPhoto.dateTaken)}
+                                    </div>
+                                )}
+                                {/* Could add camera info here with similar conditional rendering */}
+                            </div>
+                        )}
+                </>
             ) : (
                 <p>Error displaying photo.</p>
             )}
