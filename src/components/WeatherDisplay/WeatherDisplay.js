@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './WeatherDisplay.css';
 
 // You can find city IDs on OpenWeatherMap or use city name/zip.
-// New York City ID // CHANGE LATER!!!!!!!!!!!!
-const CITY_ID = '5128581';
+const CITY_ID = '5789381';
 const API_KEY = process.env.REACT_APP_OPENWEATHERMAP_API_KEY;
 const UNITS = 'imperial';
 
@@ -43,8 +42,8 @@ function WeatherDisplay() {
 
         fetchWeather();
 
-        // Refresh weather data every 30 minutes
-        const intervalId = setInterval(fetchWeather, 30 * 60 * 1000);
+        // Refresh weather data every 10 minutes
+        const intervalId = setInterval(fetchWeather, 10 * 60 * 1000);
 
         // Cleanup function
         return () => clearInterval(intervalId);
