@@ -1,0 +1,15 @@
+.info-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10; /* Ensure it's above the photos */
+    pointer-events: none; /* Allows clicks to pass through to elements behind, if any */
+    background-color: rgba(0, 0, 0, 0.3); /* Optional: slight dark background for readability */
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.info-overlay-content {
+    color: white; /* Default text color for children */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* Shadow for better readability on varied photos */
+}
