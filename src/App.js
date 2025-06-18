@@ -7,7 +7,7 @@ import EXIF from 'exif-js'; // Extracting metadata from photos
 
 import './App.css';
 import PhotoDisplay from './components/PhotoDisplay/PhotoDisplay';
-// import CalendarView from './components/CalendarView/CalendarView';
+import CalendarView from './components/CalendarView/CalendarView';
 
 function App() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -101,7 +101,7 @@ function App() {
   return (
     <div className="app-container">
       <PhotoDisplay />
-      {/* <CalendarView /> */}
+      <CalendarView />
       <div className="photo-uploader">
         <h3>Upload New Photo</h3>
         <input type="file" onChange={handleFileChange} accept="image/*" />
