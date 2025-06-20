@@ -46,3 +46,27 @@
     margin-top: 10px;
     font-size: 0.9em;
 }
+
+.floating-upload-btn {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #007bff;
+    color: #fff;
+    font-size: 2em;
+    border: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    cursor: pointer;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.floating-upload-btn:hover {
+    background: #0056b3;
+}
