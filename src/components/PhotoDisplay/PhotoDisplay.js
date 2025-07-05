@@ -167,8 +167,11 @@ function PhotoDisplay() {
     if (photos.length === 0) {
         return (
             <div className="photo-display-section">
-                <h2>My Photos</h2>
-                <p>No photos uploaded yet. Use the upload button below!</p>
+                <InfoOverlay />
+                <div className="no-photos-message">
+                    <h2>My Photos</h2>
+                    <p>No photos uploaded yet. Use the upload button below!</p>
+                </div>
             </div>
         );
     }

@@ -52,3 +52,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.no-photos-message {
+    width: 100%; 
+    padding: 20px; 
+    box-sizing: border-box; 
+    text-align: right; 
+    color: #ccc; 
+}
+
+.no-photos-message h2 {
+    margin-bottom: 5px;
+}
+
+.no-photos-message p {
+    font-size: 0.9em;
+}
