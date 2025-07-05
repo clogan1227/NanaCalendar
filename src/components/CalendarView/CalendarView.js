@@ -8,7 +8,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarView.css';
 import EventCreator from '../EventCreator/EventCreator';
 import { db } from '../../firebase';
-import { collection, addDoc, onSnapshot, query } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, doc, deleteDoc } from "firebase/firestore";
 
 const locales = {
     'en-US': require('date-fns/locale/en-US'),
@@ -56,14 +56,6 @@ function CalendarView() {
         setSelectedSlot(slotInfo);
         setIsModalOpen(true);
     };
-    // const handleSelectSlot = (slotInfo) => {
-    //     // For now, just log the info. Later, this will open your modal.
-    //     console.log("Selected slot:", slotInfo);
-    //     alert(
-    //         `Selected slot: \nstart: ${slotInfo.start.toLocaleString()} ` +
-    //         `\nend: ${slotInfo.end.toLocaleString()}`
-    //     );
-    // };
 
     // --- HANDLER TO ADD EVENT TO FIRESTORE ---
     const handleEventAdd = async (eventData) => {
@@ -81,6 +73,23 @@ function CalendarView() {
         }
     };
 
+    const handleSelectEvent = (event) => {
+        // Use window.confirm for a simple confirmation dialog
+        if (window.confirm(`Are you sure you want to delete the event: "${event.title}"?`)) {
+            deleteEvent(event.id);
+        }
+    };
+
+    const deleteEvent = async (eventId) => {
+        try {
+            const eventDocRef = doc(db, "events", eventId);
+            await deleteDoc(eventDocRef);
+            console.log("Event deleted successfully!");
+        } catch (error) {
+            console.error("Error deleting event: ", error);
+        }
+    };
+
     return (
         <div className="calendar-container" style={{ height: '100%', background: 'white', padding: '10px' }}>
             <Calendar
@@ -93,6 +102,7 @@ function CalendarView() {
                 onSelectSlot={handleSelectSlot}
                 date={date}
                 onNavigate={(newDate) => setDate(newDate)}
+                onSelectEvent={handleSelectEvent}
             />
             <EventCreator
                 isOpen={isModalOpen}

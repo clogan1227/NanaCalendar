@@ -65,8 +65,28 @@ function EventCreator({ isOpen, onClose, onEventAdd, selectedSlot }) {
                         All-day event
                         </label>
                     </div>
-                    {/* We could add datetime-local inputs here for start/end if needed,
-                        but for now, we'll use the selected slot's times. */}
+                    {!allDay && (
+                        <>
+                            <div className="event-modal-field">
+                                <label>Start Time</label>
+                                <input
+                                    type="datetime-local"
+                                    className="event-modal-input"
+                                    value={formatDateForInput(start)}
+                                    onChange={(e) => setStart(new Date(e.target.value))}
+                                    />
+                            </div>
+                            <div className="event-modal-field">
+                                <label>End Time</label>
+                                <input
+                                    type="datetime-local"
+                                    className="event-modal-input"
+                                    value={formatDateForInput(end)}
+                                    onChange={(e) => setEnd(new Date(e.target.value))}
+                                />
+                            </div>
+                        </>
+                    )}
                     <div className="event-modal-buttons">
                         <button type="submit" className="button-primary">Save Event</button>
                         <button type="button" onClick={onClose}>Cancel</button>
