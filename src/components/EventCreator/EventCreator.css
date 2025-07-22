@@ -38,8 +38,10 @@
 
 .event-modal-buttons {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     gap: 10px;
+    margin-top: 20px;
 }
 
 .event-modal-buttons button {
@@ -51,5 +53,15 @@
 
 .event-modal-buttons .button-primary {
     background-color: #007bff;
+    color: white;
+}
+
+.buttons-right {
+    display: flex;
+    gap: 10px;
+}
+
+.button-danger {
+    background-color: #dc3545;
     color: white;
 }

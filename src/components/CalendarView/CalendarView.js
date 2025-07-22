@@ -8,7 +8,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarView.css';
 import EventCreator from '../EventCreator/EventCreator';
 import { db } from '../../firebase';
-import { collection, addDoc, onSnapshot, query, doc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
 
 const locales = {
     'en-US': require('date-fns/locale/en-US'),
@@ -22,12 +22,21 @@ const localizer = dateFnsLocalizer({
     locales,
 });
 
+// --- Define custom formats for the calendar ---
+const customFormats = {
+    // This format is used for the time that appears on events
+    eventTimeRangeFormat: ({ start, end }, culture, localizer) => {
+        const startTime = localizer.format(start, 'p', culture);
+        return startTime;
+    },
+};
+
 function CalendarView() {
-    // Example events
     const [events, setEvents] = useState([]);
     const [date, setDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
+    const [editingEvent, setEditingEvent] = useState(null);
 
     // --- FETCH EVENTS FROM FIRESTORE ---
     useEffect(() => {
@@ -53,7 +62,15 @@ function CalendarView() {
 
     // --- HANDLER TO OPEN THE MODAL ---
     const handleSelectSlot = (slotInfo) => {
+        setEditingEvent(null);
         setSelectedSlot(slotInfo);
+        setIsModalOpen(true);
+    };
+
+    // --- HANDLER TO SELECT EVENT ---
+    const handleSelectEvent = (event) => {
+        setEditingEvent(event);
+        setSelectedSlot(null);
         setIsModalOpen(true);
     };
 
@@ -73,14 +90,23 @@ function CalendarView() {
         }
     };
 
-    const handleSelectEvent = (event) => {
-        // Use window.confirm for a simple confirmation dialog
-        if (window.confirm(`Are you sure you want to delete the event: "${event.title}"?`)) {
-            deleteEvent(event.id);
+    // --- Handler to UPDATE event in Firestore ---
+    const handleEventUpdate = async (eventData) => {
+        try {
+            const eventDocRef = doc(db, "events", eventData.id);
+            await updateDoc(eventDocRef, {
+                title: eventData.title,
+                start: eventData.start,
+                end: eventData.end,
+                allDay: eventData.allDay,
+            });
+            console.log("Event updated successfully!");
+        } catch (error) {
+            console.error("Error updating event: ", error);
         }
     };
 
-    const deleteEvent = async (eventId) => {
+    const handleEventDelete = async (eventId) => {
         try {
             const eventDocRef = doc(db, "events", eventId);
             await deleteDoc(eventDocRef);
@@ -90,8 +116,14 @@ function CalendarView() {
         }
     };
 
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setEditingEvent(null);
+        setSelectedSlot(null);
+    };
+
     return (
-        <div className="calendar-container" style={{ height: '100%', background: 'white', padding: '10px' }}>
+        <div className="calendar-container" style={{ height: '50%', background: 'white', padding: '10px' }}>
             <Calendar
                 localizer={localizer}
                 events={events}
@@ -103,12 +135,16 @@ function CalendarView() {
                 date={date}
                 onNavigate={(newDate) => setDate(newDate)}
                 onSelectEvent={handleSelectEvent}
+                formats={customFormats}
             />
             <EventCreator
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={closeModal}
                 onEventAdd={handleEventAdd}
+                onEventUpdate={handleEventUpdate}
+                onEventDelete={handleEventDelete}
                 selectedSlot={selectedSlot}
+                editingEvent={editingEvent}
             />
         </div>
     );

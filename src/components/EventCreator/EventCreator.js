@@ -1,38 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import './EventCreator.css';
 
-function EventCreator({ isOpen, onClose, onEventAdd, selectedSlot }) {
+function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelete, selectedSlot, editingEvent }) {
     const [title, setTitle] = useState('');
     const [allDay, setAllDay] = useState(false);
     const [start, setStart] = useState(null);
     const [end, setEnd] = useState(null);
 
-    // When the modal opens or the selected slot changes, update the form's state
     useEffect(() => {
-        if (selectedSlot) {
-        setTitle(''); // Reset title
-        setAllDay(selectedSlot.action === 'click' || selectedSlot.slots.length === 1);
-        setStart(selectedSlot.start);
-        setEnd(selectedSlot.end);
+        if (editingEvent) {
+            // We are in "edit mode"
+            setTitle(editingEvent.title);
+            setAllDay(editingEvent.allDay);
+            setStart(editingEvent.start);
+            setEnd(editingEvent.end);
+        } else if (selectedSlot) {
+            // We are in "create mode"
+            setTitle('');
+            const isAllDay = selectedSlot.action === 'click' || selectedSlot.slots.length === 1;
+            setAllDay(isAllDay);
+            setStart(selectedSlot.start);
+            setEnd(selectedSlot.end);
         }
-    }, [selectedSlot]);
+    }, [editingEvent, selectedSlot]);
 
     if (!isOpen) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (title && start && end) {
-            onEventAdd({
-                title,
-                start,
-                end,
-                allDay,
-            });
-            onClose(); // Close the modal after adding
-        } else {
-            alert('Please enter a title for the event.');
+        if (!title) {
+            alert('Please enter a title.');
+            return;
         }
+
+        const eventData = {title, start, end, allDay};
+
+        if (editingEvent) {
+            onEventUpdate({...eventData, id: editingEvent.id});
+        } else {
+            onEventAdd(eventData);
+        }
+
+        onClose();
     };
+
+    const handleDelete = () => {
+        if (editingEvent) {
+            onEventDelete(editingEvent.id);
+            onClose();
+        }
+    }
 
     // Helper to format dates for display in the input fields
     const formatDateForInput = (date) => {
@@ -45,7 +62,7 @@ function EventCreator({ isOpen, onClose, onEventAdd, selectedSlot }) {
     return (
         <div className="event-modal-overlay">
             <div className="event-modal-content">
-                <h2>Add New Event</h2>
+                <h2>{editingEvent ? 'Edit Event' : 'Add New Event'}</h2>
                 <form onSubmit={handleSubmit}>
                     <input
                         type="text"
@@ -88,8 +105,17 @@ function EventCreator({ isOpen, onClose, onEventAdd, selectedSlot }) {
                         </>
                     )}
                     <div className="event-modal-buttons">
-                        <button type="submit" className="button-primary">Save Event</button>
-                        <button type="button" onClick={onClose}>Cancel</button>
+                        {editingEvent && (
+                            <button type="button" onClick={handleDelete} className="button-danger">
+                                Delete
+                            </button>
+                        )}
+                        <div className="buttons-right">
+                            <button type="button" onClick={onClose}>Cancel</button>
+                            <button type="submit" className="button-primary">
+                                {editingEvent ? 'Update Event' : 'Save Event'}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
