@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
@@ -22,14 +22,33 @@ const localizer = dateFnsLocalizer({
     locales,
 });
 
-// --- Define custom formats for the calendar ---
-const customFormats = {
-    // This format is used for the time that appears on events
-    eventTimeRangeFormat: ({ start, end }, culture, localizer) => {
-        const startTime = localizer.format(start, 'p', culture);
-        return startTime;
-    },
-};
+// // --- Define custom formats for the calendar ---
+// const customFormats = {
+//     // This format is used for the time that appears on events
+//     eventTimeRangeFormat: ({ start, end }, culture, localizer) => {
+//         const startTime = localizer.format(start, 'p', culture);
+//         return startTime;
+//     },
+// };
+
+const MonthEvent = ({ event, localizer }) => {
+    // If it's an all-day event, just show the title
+    if (event.allDay) {
+        return <strong>{event.title}</strong>;
+    }
+
+    // If it's not an all-day event, show the time and the title
+    return (
+        <div>
+            {/* Format the time using 'p' for short time, e.g., "7:00 PM" */}
+            <strong>{event.title}</strong>
+            <span> - </span>
+            <span style={{ marginRight: '5px' }}>
+                {localizer.format(event.start, 'p')}
+            </span>
+        </div>
+    );
+    };
 
 function CalendarView() {
     const [events, setEvents] = useState([]);
@@ -122,6 +141,23 @@ function CalendarView() {
         setSelectedSlot(null);
     };
 
+    const { components, formats } = useMemo(
+        () => ({
+            components: {
+                // Use our custom component for the 'event' in the 'month' view
+                month: {
+                    event: (props) => <MonthEvent {...props} localizer={localizer} />,
+                },
+            },
+            formats: {
+                // This format is still useful for Week and Day views
+                eventTimeRangeFormat: ({ start }, culture, localizer) =>
+                    localizer.format(start, 'p', culture),
+            },
+        }),
+        [] // Empty dependency array means this object is created only once
+    );
+
     return (
         <div className="calendar-container" style={{ height: '50%', background: 'white', padding: '10px' }}>
             <Calendar
@@ -135,7 +171,10 @@ function CalendarView() {
                 date={date}
                 onNavigate={(newDate) => setDate(newDate)}
                 onSelectEvent={handleSelectEvent}
-                formats={customFormats}
+                components={components}
+                formats={formats}
+                views={Object.values(Views)}
+                defaultView={Views.MONTH}
             />
             <EventCreator
                 isOpen={isModalOpen}

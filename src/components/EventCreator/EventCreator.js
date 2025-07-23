@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './EventCreator.css';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelete, selectedSlot, editingEvent }) {
     const [title, setTitle] = useState('');
@@ -52,12 +54,12 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
     }
 
     // Helper to format dates for display in the input fields
-    const formatDateForInput = (date) => {
-        if (!date) return '';
-        // Format to YYYY-MM-DDTHH:mm which is required by datetime-local input
-        const pad = (num) => num.toString().padStart(2, '0');
-        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    };
+    // const formatDateForInput = (date) => {
+    //     if (!date) return '';
+    //     // Format to YYYY-MM-DDTHH:mm which is required by datetime-local input
+    //     const pad = (num) => num.toString().padStart(2, '0');
+    //     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    // };
 
     return (
         <div className="event-modal-overlay">
@@ -86,21 +88,35 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
                         <>
                             <div className="event-modal-field">
                                 <label>Start Time</label>
-                                <input
+                                {/* <input
                                     type="datetime-local"
                                     className="event-modal-input"
                                     value={formatDateForInput(start)}
                                     onChange={(e) => setStart(new Date(e.target.value))}
+                                    /> */}
+                                <DatePicker
+                                    selected={start}
+                                    onChange={(date) => setStart(date)}
+                                    showTimeSelect
+                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                    className="event-modal-input"
                                     />
                             </div>
                             <div className="event-modal-field">
                                 <label>End Time</label>
-                                <input
+                                {/* <input
                                     type="datetime-local"
                                     className="event-modal-input"
                                     value={formatDateForInput(end)}
                                     onChange={(e) => setEnd(new Date(e.target.value))}
-                                />
+                                /> */}
+                                <DatePicker
+                                    selected={end}
+                                    onChange={(date) => setEnd(date)}
+                                    showTimeSelect
+                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                    className="event-modal-input"
+                                    />
                             </div>
                         </>
                     )}
