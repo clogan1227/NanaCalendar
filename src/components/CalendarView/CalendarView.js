@@ -9,6 +9,9 @@ import './CalendarView.css';
 import EventCreator from '../EventCreator/EventCreator';
 import { db } from '../../firebase';
 import { collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import Holidays from 'date-holidays';
+import { RRule } from 'rrule';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 const locales = {
     'en-US': require('date-fns/locale/en-US'),
@@ -21,15 +24,6 @@ const localizer = dateFnsLocalizer({
     getDay,
     locales,
 });
-
-// // --- Define custom formats for the calendar ---
-// const customFormats = {
-//     // This format is used for the time that appears on events
-//     eventTimeRangeFormat: ({ start, end }, culture, localizer) => {
-//         const startTime = localizer.format(start, 'p', culture);
-//         return startTime;
-//     },
-// };
 
 const MonthEvent = ({ event, localizer }) => {
     // If it's an all-day event, just show the title
@@ -71,6 +65,7 @@ function CalendarView() {
                     // Convert Firestore Timestamps to JS Date objects
                     start: data.start.toDate(),
                     end: data.end.toDate(),
+                    until: data.until ? data.until.toDate() : null,
                 };
             });
             setEvents(firestoreEvents);
@@ -78,6 +73,57 @@ function CalendarView() {
 
         return () => unsubscribe(); // Cleanup listener
     }, []);
+
+    // --- Generate holidays using useMemo ---
+    const holidays = useMemo(() => {
+        const hd = new Holidays('US', 'wa');
+
+        // Get all holidays for the year of the currently viewed date
+        const holidayEvents = hd.getHolidays(date.getFullYear());
+
+        return holidayEvents.map(holiday => ({
+            title: holiday.name,
+            start: new Date(holiday.date),
+            end: new Date(holiday.date),
+            allDay: true,
+            isHoliday: true, // Add a custom property to style them differently
+        }));
+    }, [date]); // Re-calculate only when the date (and thus potentially the year) changes
+
+    // const allEvents = useMemo(() => [...events, ...holidays], [events, holidays]);
+
+    // --- COMBINE user events and holidays for the calendar ---
+    const allEvents = useMemo(() => {
+        const expandedEvents = events.flatMap(event => {
+            if (event.recurrence && event.recurrence !== 'none') {
+                const ruleOptions = {
+                    freq: RRule[event.recurrence.toUpperCase()],
+                    dtstart: event.start,
+                    until: event.until, // Pass the 'until' date directly to the rule
+                };
+
+                const rule = new RRule(ruleOptions);
+
+                // Get the start and end of the currently visible month for expansion range
+                const viewStart = startOfMonth(date);
+                const viewEnd = endOfMonth(date);
+
+                const dates = rule.between(viewStart, viewEnd);
+
+                // Create an event instance for each occurrence
+                return dates.map(occurrenceDate => ({
+                    ...event,
+                    // Override start and end for this specific instance
+                    start: occurrenceDate,
+                    end: new Date(occurrenceDate.getTime() + (event.end.getTime() - event.start.getTime())),
+                }));
+            }
+            // This is a regular, non-recurring event
+            return event;
+        });
+
+        return [...expandedEvents, ...holidays];
+    }, [events, holidays, date]); // Re-expand when the view date changes
 
     // --- HANDLER TO OPEN THE MODAL ---
     const handleSelectSlot = (slotInfo) => {
@@ -102,6 +148,8 @@ function CalendarView() {
                 start: eventData.start, // This is already a JS Date object
                 end: eventData.end,     // This is also a JS Date object
                 allDay: eventData.allDay,
+                recurrence: eventData.recurrence,
+                until: eventData.until,
             });
             console.log("Event added successfully!");
         } catch (error) {
@@ -118,6 +166,8 @@ function CalendarView() {
                 start: eventData.start,
                 end: eventData.end,
                 allDay: eventData.allDay,
+                recurrence: eventData.recurrence,
+                until: eventData.until,
             });
             console.log("Event updated successfully!");
         } catch (error) {
@@ -162,7 +212,7 @@ function CalendarView() {
         <div className="calendar-container" style={{ height: '50%', background: 'white', padding: '10px' }}>
             <Calendar
                 localizer={localizer}
-                events={events}
+                events={allEvents}
                 startAccessor="start"
                 endAccessor="end"
                 style={{ height: '100%' }}

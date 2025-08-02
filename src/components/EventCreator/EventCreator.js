@@ -8,6 +8,8 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
     const [allDay, setAllDay] = useState(false);
     const [start, setStart] = useState(null);
     const [end, setEnd] = useState(null);
+    const [recurrence, setRecurrence] = useState('none');
+    const [until, setUntil] = useState(null);
 
     useEffect(() => {
         if (editingEvent) {
@@ -16,6 +18,8 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
             setAllDay(editingEvent.allDay);
             setStart(editingEvent.start);
             setEnd(editingEvent.end);
+            setRecurrence(editingEvent.recurrence || 'none');
+            setUntil(editingEvent.until ? editingEvent.until.toDate() : null);
         } else if (selectedSlot) {
             // We are in "create mode"
             setTitle('');
@@ -23,6 +27,8 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
             setAllDay(isAllDay);
             setStart(selectedSlot.start);
             setEnd(selectedSlot.end);
+            setRecurrence('none');
+            setUntil(null);
         }
     }, [editingEvent, selectedSlot]);
 
@@ -35,7 +41,7 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
             return;
         }
 
-        const eventData = {title, start, end, allDay};
+        const eventData = {title, start, end, allDay, recurrence, until};
 
         if (editingEvent) {
             onEventUpdate({...eventData, id: editingEvent.id});
@@ -48,18 +54,16 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
 
     const handleDelete = () => {
         if (editingEvent) {
-            onEventDelete(editingEvent.id);
-            onClose();
+            const confirmationMessage = editingEvent.recurrence && editingEvent.recurrence !== 'none'
+                ? `This is a recurring event. Are you sure you want to delete this event and all future occurrences?`
+                : `Are you sure you want to delete the event: "${editingEvent.title}"?`;
+
+            if (window.confirm(confirmationMessage)) {
+                onEventDelete(editingEvent.id);
+                onClose();
+            }
         }
     }
-
-    // Helper to format dates for display in the input fields
-    // const formatDateForInput = (date) => {
-    //     if (!date) return '';
-    //     // Format to YYYY-MM-DDTHH:mm which is required by datetime-local input
-    //     const pad = (num) => num.toString().padStart(2, '0');
-    //     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-    // };
 
     return (
         <div className="event-modal-overlay">
@@ -84,6 +88,33 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
                         All-day event
                         </label>
                     </div>
+                    <div className="event-modal-field">
+                        <label>Repeat</label>
+                        <select
+                            value={recurrence}
+                            onChange={(e) => setRecurrence(e.target.value)}
+                            className="event-modal-input"
+                        >
+                        <option value="none">Does not repeat</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    {recurrence !== 'none' && (
+                        <div className="event-modal-field">
+                            <label>Repeat Until</label>
+                            <DatePicker
+                                selected={until}
+                                onChange={(date) => setUntil(date)}
+                                dateFormat="MMMM d, yyyy"
+                                className="event-modal-input"
+                                placeholderText="Optional: Select an end date"
+                                isClearable // Adds a small 'x' to clear the date
+                            />
+                        </div>
+                    )}
                     {!allDay && (
                         <>
                             <div className="event-modal-field">
