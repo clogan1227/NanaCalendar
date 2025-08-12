@@ -1,6 +1,6 @@
 .photo-display-section {
     background-color: #333;
-    height: 60%; /* This is the height of the photo portion, adjust as needed */
+    height: 50%; /* This is the height of the photo portion,  adjust as needed */
     overflow: hidden;
     box-sizing: border-box;
     position: relative;
@@ -51,4 +51,20 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.no-photos-message {
+    width: 100%; 
+    padding: 20px; 
+    box-sizing: border-box; 
+    text-align: right; 
+    color: #ccc; 
+}
+
+.no-photos-message h2 {
+    margin-bottom: 5px;
+}
+
+.no-photos-message p {
+    font-size: 0.9em;
 }
