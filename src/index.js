@@ -61,24 +61,48 @@ function Root() {
 
   if (!user) {
     return (
-      <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <h2>Login</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <br />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <br />
-        <button onClick={handleLogin}>Login</button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
+      // <div style={{ textAlign: "center", marginTop: "50px" }}>
+      //   <h2>Login</h2>
+      //   <input
+      //     type="email"
+      //     placeholder="Email"
+      //     value={email}
+      //     onChange={(e) => setEmail(e.target.value)}
+      //   />
+      //   <br />
+      //   <input
+      //     type="password"
+      //     placeholder="Password"
+      //     value={password}
+      //     onChange={(e) => setPassword(e.target.value)}
+      //   />
+      //   <br />
+      //   <button onClick={handleLogin}>Login</button>
+      //   {error && <p style={{ color: "red" }}>{error}</p>}
+      // </div>
+      <div className="login-container">
+        <div className="login-box">
+          <h1>Nana's Calendar!</h1>
+          <h2>Login</h2>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="login-input"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="login-input"
+          />
+          <button onClick={handleLogin} className="login-button">
+            Login
+          </button>
+          {error && <p className="login-error">{error}</p>}
+        </div>
       </div>
     );
   }
