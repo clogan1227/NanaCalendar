@@ -55,13 +55,13 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
     const handleDelete = () => {
         if (editingEvent) {
             const confirmationMessage = editingEvent.recurrence && editingEvent.recurrence !== 'none'
-                ? `This is a recurring event. Are you sure you want to delete this event and all future occurrences?`
-                : `Are you sure you want to delete the event: "${editingEvent.title}"?`;
+            ? `This is a recurring event. Are you sure you want to delete this event and all future occurrences?`
+            : `Are you sure you want to delete the event: "${editingEvent.title}"?`;
 
-            if (window.confirm(confirmationMessage)) {
-                onEventDelete(editingEvent.id);
-                onClose();
-            }
+        if (window.confirm(confirmationMessage)) {
+            onEventDelete(editingEvent.id);
+            onClose();
+        }
         }
     }
 
