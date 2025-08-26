@@ -33,13 +33,14 @@ future reference.
 | 8-25-2025  | UPERFECT Portable Monitor 15.6"                           | Amazon.com      | $66.81     |
 | 8-25-2025  | Monitor Protection Plan                                   | Amazon.com      | $9.69      |
 | 8-25-2025  | Mount-It! Small TV Monitor Wall Mount                     | Amazon.com      | $18.32     |
+| 8-26-2025  | uni SD Card Reader                                        | Amazon.com      | $8.61      |
 
 ---
 
 ## 📊 Summary
 
-- **Total Purchases:** 9  
-- **Total Spent:** $215.07  
+- **Total Purchases:** 10  
+- **Total Spent:** $223.68  
 
 
 ---
