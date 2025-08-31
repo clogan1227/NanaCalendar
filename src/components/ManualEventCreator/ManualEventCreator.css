@@ -1,103 +1,91 @@
+/* This is the full-screen, semi-transparent background */
 .add-event-overlay {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-color: #f0f2f5;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
     z-index: 1000;
     display: flex;
-    flex-direction: column;
-}
-
-.add-event-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 15px 25px;
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    flex-shrink: 0;
-}
-
-.add-event-header h1 { margin: 0; font-size: 1.5em; }
-.add-event-header .close-button {
-    font-size: 2.5em; font-weight: bold; color: #888;
-    background: none; border: none; cursor: pointer; line-height: 1;
-}
-
-.add-event-form-container {
-    padding: 20px;
-    display: flex;
     justify-content: center;
 }
 
-.add-event-form {
-    background: white;
-    padding: 30px;
+/* This is the white floating card that holds the content */
+.add-event-content {
+    background: #fff;
+    padding: 20px 30px;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    width: 100%;
-    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 400px;
+    position: relative; /* For positioning the close button */
 }
 
-.form-field {
+.add-event-content h2 {
+    margin-top: 0;
     margin-bottom: 20px;
+    text-align: center;
 }
 
-.form-field label {
+/* The close button in the top-right corner of the card */
+.add-event-content .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #888;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+}
+
+/* Generic styles for form fields and inputs */
+.add-event-field {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.add-event-field label {
     display: block;
     margin-bottom: 8px;
     font-weight: bold;
 }
 
-.form-field input[type="text"],
-.form-field .react-datepicker-wrapper {
-    width: 100%;
-}
-
-.form-field input[type="text"],
-.form-field .react-datepicker__input-container input {
+.add-event-input,
+.add-event-field select,
+.add-event-field .react-datepicker-wrapper,
+.add-event-field .react-datepicker__input-container input {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
+    background-color: white; /* Ensure select has a background */
 }
 
-.form-actions {
-    text-align: right;
-    margin-top: 30px;
+/* Styles for the action buttons at the bottom */
+.add-event-buttons {
+    display: flex;
+    justify-content: flex-end; /* Pushes buttons to the right */
+    gap: 10px;
+    margin-top: 20px;
 }
 
-.button-primary {
-    padding: 10px 20px;
+.add-event-buttons button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.add-event-buttons .button-primary {
     background-color: #007bff;
     color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
 }
 
-.form-field select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: white;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 30px;
-}
-
-.button-secondary {
-    padding: 10px 20px;
-    background-color: #6c757d; /* A standard secondary/gray color */
+.add-event-buttons .button-secondary {
+    background-color: #6c757d;
     color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
 }

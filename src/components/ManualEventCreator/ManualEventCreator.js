@@ -39,75 +39,95 @@ function ManualEventCreator({ isOpen, onClose, onEventAdd }) {
 
     return (
         <div className="add-event-overlay">
-            <div className="add-event-header">
-                <h1>Add New Event</h1>
+            <div className="add-event-content">
+                <h2>Add New Event</h2>
                 <button onClick={onClose} className="close-button">&times;</button>
-            </div>
-            <div className="add-event-form-container">
-                <form onSubmit={handleSubmit} className="add-event-form">
-                <div className="form-field">
-                    <label>Event Title</label>
-                    <input
-                        type="text"
-                        placeholder="Event Title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="form-field">
-                    <label>
-                        <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />
-                        All-day event
-                    </label>
-                </div>
-                <div className="form-field">
-                    <label>Start Date {allDay ? '' : '& Time'}</label>
-                    <DatePicker
-                        selected={start}
-                        onChange={(date) => setStart(date)}
-                        showTimeSelect={!allDay}
-                        dateFormat={allDay ? "MMMM d, yyyy" : "MMMM d, yyyy h:mm aa"}
-                    />
-                </div>
-                <div className="form-field">
-                    <label>End Date {allDay ? '' : '& Time'}</label>
-                    <DatePicker
-                        selected={end}
-                        onChange={(date) => setEnd(date)}
-                        showTimeSelect={!allDay}
-                        dateFormat={allDay ? "MMMM d, yyyy" : "MMMM d, yyyy h:mm aa"}
-                    />
-                </div>
-                <div className="form-field">
-                    <label>Repeat</label>
-                    <select
-                        value={recurrence}
-                        onChange={(e) => setRecurrence(e.target.value)}
-                    >
-                    <option value="none">Does not repeat</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                    </select>
-                </div>
-                {recurrence !== 'none' && (
-                    <div className="form-field">
-                        <label>Repeat Until</label>
-                        <DatePicker
-                            selected={until}
-                            onChange={(date) => setUntil(date)}
-                            dateFormat="MMMM d, yyyy"
-                            placeholderText="Optional: Select an end date"
-                            isClearable
+
+                <form onSubmit={handleSubmit}>
+                    <div className="add-event-field">
+                        <label>Event Title</label>
+                        <input
+                            type="text"
+                            placeholder="Event Title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="add-event-input"
+                            required
                         />
                     </div>
-                )}
-                <div className="form-actions">
-                    <button type="button" onClick={onClose} className="button-secondary">Cancel</button>
-                    <button type="submit" className="button-primary">Save Event</button>
-                </div>
+                    <div className="add-event-field">
+                        <label>
+                            <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />
+                            All-day event
+                        </label>
+                    </div>
+
+                    {allDay ? (
+                        <div className="add-event-field">
+                            <label>Date</label>
+                            <DatePicker
+                                selected={start}
+                                onChange={(date) => { setStart(date); setEnd(date); }}
+                                dateFormat="MMMM d, yyyy"
+                                className="add-event-input"
+                            />
+                        </div>
+                    ) : (
+                        <>
+                        <div className="add-event-field">
+                            <label>Start Date & Time</label>
+                            <DatePicker
+                                selected={start}
+                                onChange={(date) => setStart(date)}
+                                showTimeSelect
+                                dateFormat="MMMM d, yyyy h:mm aa"
+                                className="add-event-input"
+                            />
+                        </div>
+                        <div className="add-event-field">
+                            <label>End Date & Time</label>
+                            <DatePicker
+                                selected={end}
+                                onChange={(date) => setEnd(date)}
+                                showTimeSelect
+                                dateFormat="MMMM d, yyyy h:mm aa"
+                                className="add-event-input"
+                            />
+                        </div>
+                        </>
+                    )}
+
+                    <div className="add-event-field">
+                        <label>Repeat</label>
+                        <select
+                            value={recurrence}
+                            onChange={(e) => setRecurrence(e.target.value)}
+                            className="add-event-input"
+                        >
+                            <option value="none">Does not repeat</option>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    {recurrence !== 'none' && (
+                        <div className="add-event-field">
+                            <label>Repeat Until</label>
+                            <DatePicker
+                                selected={until}
+                                onChange={(date) => setUntil(date)}
+                                dateFormat="MMMM d, yyyy"
+                                className="add-event-input"
+                                placeholderText="Optional: Select an end date"
+                                isClearable
+                            />
+                        </div>
+                    )}
+                    <div className="add-event-buttons">
+                        <button type="button" onClick={onClose} className="button-secondary">Cancel</button>
+                        <button type="submit" className="button-primary">Save Event</button>
+                    </div>
                 </form>
             </div>
         </div>
