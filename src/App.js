@@ -9,7 +9,7 @@ import './App.css';
 import PhotoDisplay from './components/PhotoDisplay/PhotoDisplay';
 import CalendarView from './components/CalendarView/CalendarView';
 import MainMenu from './components/MainMenu/MainMenu';
-// import PhotoManager from './components/PhotoManager/PhotoManager';
+import PhotoManager from './components/PhotoManager/PhotoManager';
 import ManualEventCreator from './components/ManualEventCreator/ManualEventCreator';
 
 // Wraps the callback-based EXIF.getData in a Promise
@@ -41,6 +41,8 @@ function App() {
   const [isMainMenuOpen, setIsMainMenuOpen] = useState(false);
   const [isPhotoPageOpen, setIsPhotoPageOpen] = useState(false);
   const [isAddEventPageOpen, setIsAddEventPageOpen] = useState(false);
+
+  const isOverlayOpen = isMainMenuOpen || isPhotoPageOpen || isAddEventPageOpen;
 
   const handleMultipleUploads = async (files) => {
     console.log(`Uploading ${files.length} files...`);
@@ -93,6 +95,14 @@ function App() {
     }
   };
 
+  const handleMultipleDeletes = async (photosToDelete) => {
+    if (!window.confirm(`Are you sure you want to delete ${photosToDelete.length} selected photos?`)) return;
+    const deletePromises = photosToDelete.map(photo => handlePhotoDelete(photo));
+    console.log("Deleting multiple photos...");
+    await Promise.all(deletePromises);
+    console.log("Finished deleting selected photos.");
+  };
+
   const handleManualEventAdd = async (eventData) => {
     try {
       await addDoc(collection(db, "events"), eventData);
@@ -114,15 +124,18 @@ function App() {
 
   return (
     <div className="app-container">
-      <PhotoDisplay />
+      <PhotoDisplay
+        showMenuButton={!isOverlayOpen}
+        onOpenMenu={() => setIsMainMenuOpen(true)}
+      />
       <CalendarView />
-      <button
+      {/* <button
         className="floating-upload-btn"
         onClick={() => setIsMainMenuOpen(true)}
         title="Open Menu"
       >
         +
-      </button>
+      </button> */}
 
       <MainMenu
         isOpen={isMainMenuOpen}
@@ -130,12 +143,13 @@ function App() {
         onOpenPhotoManager={openPhotoManager}
         onOpenAddEvent={openAddEventPage}
       />
-      {/* <PhotoManager
+      <PhotoManager
         isOpen={isPhotoPageOpen}
         onClose={() => setIsPhotoPageOpen(false)}
         onUploadMultiple={handleMultipleUploads}
         onDelete={handlePhotoDelete}
-      /> */}
+        onMultiDelete={handleMultipleDeletes}
+      />
       <ManualEventCreator
         isOpen={isAddEventPageOpen}
         onClose={() => setIsAddEventPageOpen(false)}

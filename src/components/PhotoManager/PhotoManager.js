@@ -3,7 +3,7 @@ import { db } from '../../firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import './PhotoManager.css';
 import PhotoGridItem from '../PhotoGridItem/PhotoGridItem';
-import PhotoDetails from '../PhotoDetailModal/PhotoDetails';
+import PhotoDetails from '../PhotoDetails/PhotoDetails';
 
 function PhotoManager({ isOpen, onClose, onUploadMultiple, onDelete, onMultiDelete }) {
     const [allPhotos, setAllPhotos] = useState([]);

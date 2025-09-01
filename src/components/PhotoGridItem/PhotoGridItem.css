@@ -1,0 +1,84 @@
+.photo-grid-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    aspect-ratio: 1 / 1; /* Makes the items perfectly square */
+    cursor: pointer;
+}
+
+.photo-grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures image fills the square without distortion */
+    display: block;
+    transition: transform 0.2s ease-in-out;
+}
+
+.photo-grid-item:hover img {
+    transform: scale(1.05);
+}
+
+.photo-item-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    border: 3px solid transparent; /* Prepare for selection border */
+    box-sizing: border-box;
+}
+
+.photo-grid-item:hover .photo-item-overlay {
+    opacity: 1;
+}
+
+.photo-grid-item.selected .photo-item-overlay {
+    opacity: 1;
+    background-color: rgba(0, 123, 255, 0.3);
+    border-color: #007bff;
+}
+
+.selection-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 20px;
+    height: 20px;
+    z-index: 3;
+    cursor: pointer;
+}
+
+.delete-photo-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out, transform 0.2s;
+    z-index: 3;
+}
+
+.photo-grid-item:hover .delete-photo-button {
+    opacity: 1;
+}
+
+.delete-photo-button:hover {
+    background-color: #dc3545; /* Red on hover */
+    transform: scale(1.1);
+}

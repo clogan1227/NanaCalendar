@@ -1,164 +1,74 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PhotoDisplay.css';
 import InfoOverlay from '../InfoOverlay/InfoOverlay';
 import { db } from '../../firebase';
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
-const FADE_DURATION_MS = 1000; // 1 second
 const SLIDESHOW_VISIBLE_DURATION_MS = 10000; // 10 seconds
 
-function PhotoDisplay() {
-    const [photos, setPhotos] = useState([]); // To store photo data from Firestore
+function PhotoDisplay({ showMenuButton, onOpenMenu }) {
+    const [photos, setPhotos] = useState([]);
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-    const [isLoading, setIsLoading] = useState(true); // To show a loading state
-    const [imageOpacity, setImageOpacity] = useState(1); // Target opacity for current image
+    const [isLoading, setIsLoading] = useState(true);
 
-    const slideshowTimerRef = useRef(null); // Timer for visible duration
-    const changeImageSrcTimerRef = useRef(null); // Timer to delay src change after fade out
-
-    // Effect for fetching photos from Firestore
+    // This effect runs once to set up a real-time listener for photos from Firestore.
     useEffect(() => {
         setIsLoading(true);
-        const photosCollectionRef = collection(db, "photos")
+        const photosCollectionRef = collection(db, "photos");
         const q = query(photosCollectionRef, orderBy("createdAt", "asc"));
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const photosData = [];
-            querySnapshot.forEach((doc) => {
-                photosData.push({ id: doc.id, ...doc.data() });
-            });
+            const photosData = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
             setPhotos(photosData);
             setIsLoading(false);
 
-            // If photos change, reset index to 0 to avoid out-of-bounds, especially if the number of photos decreases.
-            setCurrentPhotoIndex(prevIndex => { // prevIndex is the current value of currentPhotoIndex
-            if (photosData.length > 0 && prevIndex >= photosData.length) {
-                return 0;
-            }
-            if (photosData.length === 0) {
-                return 0;
-            }
-            return prevIndex; // No change needed
+            // When the photo list updates, ensure the current index is still valid.
+            setCurrentPhotoIndex(prevIndex => {
+                if (photosData.length === 0) return 0;
+                if (prevIndex >= photosData.length) return photosData.length - 1; // Go to last photo
+                return prevIndex;
             });
-
         }, (error) => {
             console.error("Error fetching photos: ", error);
             setIsLoading(false);
         });
 
-        // Cleanup: Unsubscribe from the listener when the component unmounts
+        // Cleanup the listener when the component unmounts
         return () => unsubscribe();
-    }, []); // Empty dependency array: runs once on mount and cleans up on unmount
+    }, []); // Empty dependency array ensures this runs only once
 
-    // Effect: Adjust index and ensure visibility when 'photos' array changes
+    // This effect is responsible for advancing the slide after a delay.
     useEffect(() => {
-        if (!isLoading) {
-            // We use the functional update form of setCurrentPhotoIndex.
-            // This allows us to calculate the new index based on the previous index
-            // and the current 'photos' state, without needing 'currentPhotoIndex'
-            // as a direct dependency for this specific adjustment logic.
-            setCurrentPhotoIndex(prevCurrentPhotoIndex => {
-                let newIndex = prevCurrentPhotoIndex;
-
-                if (photos.length === 0) {
-                    newIndex = 0;
-                } else if (prevCurrentPhotoIndex >= photos.length) {
-                    // If current index is now out of bounds, set to the last valid photo index.
-                    newIndex = photos.length - 1;
-                }
-                // If newIndex is different from prevCurrentPhotoIndex, React will update the state.
-                // If it's the same, React will bail out of the update.
-                return newIndex;
-            });
-
-            // If the photos array changes but the index *doesn't* (e.g. content update, or single photo),
-            // we want to ensure it's visible.
-            // If the index *does* change, "Effect 2" (for fade-in) will handle opacity.
-            // Let's make this conditional.
-            // We can check if the index *would have* changed.
-            let potentialNewIndex = currentPhotoIndex; // Read current for this specific logic
-            if (photos.length === 0) {
-                potentialNewIndex = 0;
-            } else if (currentPhotoIndex >= photos.length) {
-                potentialNewIndex = photos.length - 1;
-            }
-
-            if (potentialNewIndex === currentPhotoIndex) {
-                // If the index isn't going to change due to photos array adjustment,
-                // but photos array itself might have changed (or it's initial load),
-                // ensure current image is visible.
-                // setImageOpacity(1);
-            }
-            // If currentPhotoIndex *will* change due to the setCurrentPhotoIndex above,
-            // then "Effect 2" (which depends on currentPhotoIndex) will run and handle the fade-in.
-        }
-    }, [photos, isLoading, currentPhotoIndex, setImageOpacity]);
-
-    // Effect 1: Manages FADE-OUT and triggers SRC CHANGE
-    useEffect(() => {
-        // Clear any pending timers
-        if (slideshowTimerRef.current) clearTimeout(slideshowTimerRef.current);
-        if (changeImageSrcTimerRef.current) clearTimeout(changeImageSrcTimerRef.current);
-
+        // Only run the slideshow if there is more than one photo
         if (!isLoading && photos.length > 1) {
-            if (imageOpacity === 1) {
-                // Current image is visible, set timer to fade it out
-                slideshowTimerRef.current = setTimeout(() => {
-                    setImageOpacity(0); // Trigger fade-out
-                }, SLIDESHOW_VISIBLE_DURATION_MS);
-            } else if (imageOpacity === 0) {
-                // Current image has been told to fade out (or is faded out)
-                // Now, wait for the fade-out duration, then change the src
-                changeImageSrcTimerRef.current = setTimeout(() => {
-                    setCurrentPhotoIndex(prevIndex => (prevIndex + 1) % photos.length);
-                    // DO NOT set imageOpacity back to 1 here. The next useEffect will handle that.
-                }, FADE_DURATION_MS);
-            }
-        } else if (photos.length <= 1 && !isLoading) {
-            // Not slideshowing, ensure image is visible
-            setImageOpacity(1);
+            const timerId = setTimeout(() => {
+                setCurrentPhotoIndex(prevIndex => (prevIndex + 1) % photos.length);
+            }, SLIDESHOW_VISIBLE_DURATION_MS);
+
+            // Clear the timer if the component unmounts or dependencies change
+            return () => clearTimeout(timerId);
         }
+    }, [currentPhotoIndex, photos, isLoading]); // Re-run when the slide or photo list changes
 
-        return () => {
-            if (slideshowTimerRef.current) clearTimeout(slideshowTimerRef.current);
-            if (changeImageSrcTimerRef.current) clearTimeout(changeImageSrcTimerRef.current);
-        };
-    // This effect depends on when imageOpacity changes to 0 to trigger the src change
-    }, [isLoading, photos, imageOpacity]);
-
-  // Effect 2: Manages FADE-IN when currentPhotoIndex changes (new image src)
-    useEffect(() => {
-        if (!isLoading && photos.length > 0) {
-            setImageOpacity(0); // Ensure the new image starts transparent
-
-            const fadeInTimer = setTimeout(() => {
-                setImageOpacity(1); // Trigger the fade-in
-            }, 50); // A small delay (e.g., 10-50ms) is often enough
-
-            return () => clearTimeout(fadeInTimer);
-        } else if (!isLoading && photos.length === 0) {
-            // If all photos are removed, ensure opacity is reset (though no image will show)
-            setImageOpacity(1); // Or 0, depending on desired "empty" state appearance
-        }
-    // This effect runs when currentPhotoIndex changes, ensuring the new image fades in.
-    }, [currentPhotoIndex, isLoading, photos.length]); // photos.length in case photos disappear
-
-    const formatPhotoTimestamp = (timestamp, label = "Taken") => {
+    // Helper function to format Firestore Timestamps
+    const formatPhotoTimestamp = (timestamp) => {
         if (!timestamp || typeof timestamp.toDate !== 'function') {
-            return null; // Return null if no valid timestamp
+            return null;
         }
-        // Firestore timestamps need to be converted to JS Date objects
         const date = timestamp.toDate();
         const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
         const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
-
         return `${date.toLocaleDateString(undefined, dateOptions)} ${date.toLocaleTimeString(undefined, timeOptions)}`;
     };
+
+    // --- Render Logic ---
 
     if (isLoading) {
         return (
             <div className="photo-display-section">
-                <h2>My Photos</h2>
                 <p>Loading photos...</p>
             </div>
         );
@@ -168,46 +78,61 @@ function PhotoDisplay() {
         return (
             <div className="photo-display-section">
                 <InfoOverlay />
+                {/* The new menu button is also shown here */}
+                {showMenuButton && (
+                    <button className="photo-menu-btn" onClick={onOpenMenu} title="Open Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                        </svg>
+                    </button>
+                )}
                 <div className="no-photos-message">
                     <h2>My Photos</h2>
-                    <p>No photos uploaded yet. Use the upload button below!</p>
+                    <p>No photos uploaded yet. Use the menu to add photos!</p>
                 </div>
             </div>
         );
     }
 
-    const currentPhoto = photos.length > 0 ? photos[currentPhotoIndex] : null;
+    const currentPhoto = photos[currentPhotoIndex];
 
     return (
         <div className="photo-display-section">
             <InfoOverlay />
+
+            {/* The new menu button, conditionally rendered */}
+            {showMenuButton && (
+                <button className="photo-menu-btn" onClick={onOpenMenu} title="Open Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                    </svg>
+                </button>
+            )}
+
             {currentPhoto ? (
                 <>
                     <img
-                        key={currentPhoto.id} // Important for React to see it as a new element
+                        key={currentPhoto.id}
                         src={currentPhoto.imageUrl}
                         alt={currentPhoto.fileName || `Slide ${currentPhotoIndex + 1}`}
                         className="displayed-photo"
-                        style={{
-                            opacity: imageOpacity,
-                            transition: `opacity ${FADE_DURATION_MS}ms ease-in-out`
-                        }}
+                        // The style prop for opacity and transition has been removed
                     />
-                    {(currentPhoto.fileName || currentPhoto.dateTaken) && ( // Only render overlay if there's a filename OR a dateTaken
-                            <div className="photo-metadata-overlay">
-                                {currentPhoto.fileName && ( // Only render filename if it exists
-                                    <div className="photo-filename">{currentPhoto.fileName}</div>
-                                )}
-                                {currentPhoto.dateTaken && ( // Only render date if dateTaken exists
-                                    <div className="photo-capture-date">
-                                        Taken: {formatPhotoTimestamp(currentPhoto.dateTaken)}
-                                    </div>
-                                )}
-                                {/* Could add camera info here with similar conditional rendering */}
-                            </div>
-                        )}
+                    {(currentPhoto.fileName || currentPhoto.dateTaken) && (
+                        <div className="photo-metadata-overlay">
+                            {currentPhoto.fileName && (
+                                <div className="photo-filename">{currentPhoto.fileName}</div>
+                            )}
+                            {currentPhoto.dateTaken && (
+                                <div className="photo-capture-date">
+                                    Taken: {formatPhotoTimestamp(currentPhoto.dateTaken)}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </>
             ) : (
+                // This fallback is for the rare case where photos exist but currentPhoto is somehow null
                 <p>Error displaying photo.</p>
             )}
         </div>
