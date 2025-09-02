@@ -8,8 +8,9 @@ const SLIDESHOW_VISIBLE_DURATION_MS = 10000; // 10 seconds
 
 function PhotoDisplay({ showMenuButton, onOpenMenu }) {
     const [photos, setPhotos] = useState([]);
-    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [isImageA_OnTop, setIsImageA_OnTop] = useState(true);
 
     // This effect runs once to set up a real-time listener for photos from Firestore.
     useEffect(() => {
@@ -25,10 +26,9 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
             setPhotos(photosData);
             setIsLoading(false);
 
-            // When the photo list updates, ensure the current index is still valid.
-            setCurrentPhotoIndex(prevIndex => {
+            setActiveIndex(prevIndex => {
                 if (photosData.length === 0) return 0;
-                if (prevIndex >= photosData.length) return photosData.length - 1; // Go to last photo
+                if (prevIndex >= photosData.length) return photosData.length - 1;
                 return prevIndex;
             });
         }, (error) => {
@@ -36,22 +36,19 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
             setIsLoading(false);
         });
 
-        // Cleanup the listener when the component unmounts
         return () => unsubscribe();
-    }, []); // Empty dependency array ensures this runs only once
+    }, []);
 
-    // This effect is responsible for advancing the slide after a delay.
     useEffect(() => {
-        // Only run the slideshow if there is more than one photo
         if (!isLoading && photos.length > 1) {
             const timerId = setTimeout(() => {
-                setCurrentPhotoIndex(prevIndex => (prevIndex + 1) % photos.length);
+                setActiveIndex(prevIndex => (prevIndex + 1) % photos.length);
+                setIsImageA_OnTop(prev => !prev);
             }, SLIDESHOW_VISIBLE_DURATION_MS);
 
-            // Clear the timer if the component unmounts or dependencies change
             return () => clearTimeout(timerId);
         }
-    }, [currentPhotoIndex, photos, isLoading]); // Re-run when the slide or photo list changes
+    }, [activeIndex, photos, isLoading]); // This effect correctly re-runs when the active photo changes
 
     // Helper function to format Firestore Timestamps
     const formatPhotoTimestamp = (timestamp) => {
@@ -63,8 +60,6 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
         const timeOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
         return `${date.toLocaleDateString(undefined, dateOptions)} ${date.toLocaleTimeString(undefined, timeOptions)}`;
     };
-
-    // --- Render Logic ---
 
     if (isLoading) {
         return (
@@ -78,11 +73,10 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
         return (
             <div className="photo-display-section">
                 <InfoOverlay />
-                {/* The new menu button is also shown here */}
                 {showMenuButton && (
                     <button className="photo-menu-btn" onClick={onOpenMenu} title="Open Menu">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                            <path fillRule="evenodd" d="M3 6.75A.75.75 0 013.75 6h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 6.75zM3 12a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 12zm0 5.25a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
                         </svg>
                     </button>
                 )}
@@ -94,46 +88,51 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
         );
     }
 
-    const currentPhoto = photos[currentPhotoIndex];
+    const preloadIndex = (activeIndex + 1) % photos.length;
+    const topImage = photos[activeIndex];
+    const bottomImage = photos[preloadIndex];
 
     return (
         <div className="photo-display-section">
             <InfoOverlay />
-
-            {/* The new menu button, conditionally rendered */}
             {showMenuButton && (
                 <button className="photo-menu-btn" onClick={onOpenMenu} title="Open Menu">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                        <path fillRule="evenodd" d="M3 6.75A.75.75 0 013.75 6h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 6.75zM3 12a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 12zm0 5.25a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
                     </svg>
                 </button>
             )}
-
-            {currentPhoto ? (
-                <>
+            <div className="photo-container">
+                {topImage && (
                     <img
-                        key={currentPhoto.id}
-                        src={currentPhoto.imageUrl}
-                        alt={currentPhoto.fileName || `Slide ${currentPhotoIndex + 1}`}
-                        className="displayed-photo"
-                        // The style prop for opacity and transition has been removed
+                        key={isImageA_OnTop ? topImage.id : bottomImage.id}
+                        src={isImageA_OnTop ? topImage.imageUrl : bottomImage.imageUrl}
+                        alt={isImageA_OnTop ? topImage.fileName : bottomImage.fileName}
+                        className="slideshow-image"
+                        style={{ zIndex: isImageA_OnTop ? 2 : 1 }}
                     />
-                    {(currentPhoto.fileName || currentPhoto.dateTaken) && (
-                        <div className="photo-metadata-overlay">
-                            {currentPhoto.fileName && (
-                                <div className="photo-filename">{currentPhoto.fileName}</div>
-                            )}
-                            {currentPhoto.dateTaken && (
-                                <div className="photo-capture-date">
-                                    Taken: {formatPhotoTimestamp(currentPhoto.dateTaken)}
-                                </div>
-                            )}
+                )}
+                {bottomImage && (
+                    <img
+                        key={!isImageA_OnTop ? topImage.id : bottomImage.id}
+                        src={!isImageA_OnTop ? topImage.imageUrl : bottomImage.imageUrl}
+                        alt={!isImageA_OnTop ? topImage.fileName : bottomImage.fileName}
+                        className="slideshow-image"
+                        style={{ zIndex: !isImageA_OnTop ? 2 : 1 }}
+                    />
+                )}
+            </div>
+            {topImage && (topImage.fileName || topImage.dateTaken) && (
+                <div className="photo-metadata-overlay">
+                    {topImage.fileName && (
+                        <div className="photo-filename">{topImage.fileName}</div>
+                    )}
+                    {topImage.dateTaken && (
+                        <div className="photo-capture-date">
+                            Taken: {formatPhotoTimestamp(topImage.dateTaken)}
                         </div>
                     )}
-                </>
-            ) : (
-                // This fallback is for the rare case where photos exist but currentPhoto is somehow null
-                <p>Error displaying photo.</p>
+                </div>
             )}
         </div>
     );
