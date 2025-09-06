@@ -1,6 +1,6 @@
 import React from 'react';
 import DateTimeDisplay from '../DateTimeDisplay/DateTimeDisplay';
-import WeatherDisplay from '../WeatherDisplay/WeatherDisplay';
+// import WeatherDisplay from '../WeatherDisplay/WeatherDisplay';
 import './InfoOverlay.css';
 
 function InfoOverlay() {
@@ -8,7 +8,7 @@ function InfoOverlay() {
         <div className="info-overlay">
             <div className="info-overlay-content">
                 <DateTimeDisplay />
-                <WeatherDisplay />
+                {/* <WeatherDisplay /> */}
             </div>
         </div>
     );

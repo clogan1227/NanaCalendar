@@ -19,7 +19,7 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
             setStart(editingEvent.start);
             setEnd(editingEvent.end);
             setRecurrence(editingEvent.recurrence || 'none');
-            setUntil(editingEvent.until ? editingEvent.until.toDate() : null);
+            setUntil(editingEvent.until || null);
         } else if (selectedSlot) {
             // We are in "create mode"
             setTitle('');
@@ -69,15 +69,19 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
         <div className="event-modal-overlay">
             <div className="event-modal-content">
                 <h2>{editingEvent ? 'Edit Event' : 'Add New Event'}</h2>
+                <button onClick={onClose} className="close-button">&times;</button>
                 <form onSubmit={handleSubmit}>
-                    <input
-                        type="text"
-                        placeholder="Event Title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="event-modal-input"
-                        required
-                    />
+                    <div className="event-modal-field">
+                        <label>Event Title</label>
+                        <input
+                            type="text"
+                            placeholder="Event Title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="event-modal-input"
+                            required
+                        />
+                    </div>
                     <div className="event-modal-field">
                         <label>
                         <input
@@ -88,6 +92,46 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
                         All-day event
                         </label>
                     </div>
+                    {allDay ? (
+                        // If it IS an all-day event, show a single date picker
+                        <div className="event-modal-field">
+                            <label>Date</label>
+                            <DatePicker
+                                selected={start} // We only need to manage the 'start' date
+                                onChange={(date) => {
+                                    // For all-day events, start and end should be the same date
+                                    setStart(date);
+                                    setEnd(date);
+                                }}
+                                dateFormat="MMMM d, yyyy" // Date-only format
+                                className="event-modal-input"
+                            />
+                        </div>
+                    ) : (
+                        // If it is NOT an all-day event, show two date & time pickers
+                        <>
+                            <div className="event-modal-field">
+                                <label>Start Date & Time</label>
+                                <DatePicker
+                                    selected={start}
+                                    onChange={(date) => setStart(date)}
+                                    showTimeSelect
+                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                    className="event-modal-input"
+                                />
+                            </div>
+                            <div className="event-modal-field">
+                                <label>End Date & Time</label>
+                                <DatePicker
+                                    selected={end}
+                                    onChange={(date) => setEnd(date)}
+                                    showTimeSelect
+                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                    className="event-modal-input"
+                                />
+                            </div>
+                        </>
+                    )}
                     <div className="event-modal-field">
                         <label>Repeat</label>
                         <select
@@ -114,42 +158,6 @@ function EventCreator({ isOpen, onClose, onEventAdd, onEventUpdate, onEventDelet
                                 isClearable // Adds a small 'x' to clear the date
                             />
                         </div>
-                    )}
-                    {!allDay && (
-                        <>
-                            <div className="event-modal-field">
-                                <label>Start Time</label>
-                                {/* <input
-                                    type="datetime-local"
-                                    className="event-modal-input"
-                                    value={formatDateForInput(start)}
-                                    onChange={(e) => setStart(new Date(e.target.value))}
-                                    /> */}
-                                <DatePicker
-                                    selected={start}
-                                    onChange={(date) => setStart(date)}
-                                    showTimeSelect
-                                    dateFormat="MMMM d, yyyy h:mm aa"
-                                    className="event-modal-input"
-                                    />
-                            </div>
-                            <div className="event-modal-field">
-                                <label>End Time</label>
-                                {/* <input
-                                    type="datetime-local"
-                                    className="event-modal-input"
-                                    value={formatDateForInput(end)}
-                                    onChange={(e) => setEnd(new Date(e.target.value))}
-                                /> */}
-                                <DatePicker
-                                    selected={end}
-                                    onChange={(date) => setEnd(date)}
-                                    showTimeSelect
-                                    dateFormat="MMMM d, yyyy h:mm aa"
-                                    className="event-modal-input"
-                                    />
-                            </div>
-                        </>
                     )}
                     <div className="event-modal-buttons">
                         {editingEvent && (

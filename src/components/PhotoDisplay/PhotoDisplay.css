@@ -1,6 +1,7 @@
 .photo-display-section {
-    background-color: #333;
-    height: 50%; /* This is the height of the photo portion,  adjust as needed */
+    background-color: #000;
+    height: 50%;
+    /* This is the height of the photo portion,  adjust as needed */
     overflow: hidden;
     box-sizing: border-box;
     position: relative;
@@ -18,8 +19,8 @@
 
 .photo-metadata-overlay {
     position: absolute;
-    bottom: 10px; 
-    right: 10px; 
+    bottom: 10px;
+    right: 10px;
     background-color: rgba(0, 0, 0, 0.5);
     color: white;
     padding: 5px 10px;
@@ -41,11 +42,13 @@
 }
 
 .photo-capture-date {
-    font-size: 0.9em; /* Relative to .photo-metadata-overlay font-size */
+    font-size: 0.9em;
+    /* Relative to .photo-metadata-overlay font-size */
 }
 
 .photo-camera-info {
-    font-size: 0.8em; /* Relative to .photo-metadata-overlay font-size */
+    font-size: 0.8em;
+    /* Relative to .photo-metadata-overlay font-size */
     color: #cccccc;
     margin-top: 2px;
     white-space: nowrap;
@@ -54,11 +57,11 @@
 }
 
 .no-photos-message {
-    width: 100%; 
-    padding: 20px; 
-    box-sizing: border-box; 
-    text-align: right; 
-    color: #ccc; 
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: right;
+    color: #ccc;
 }
 
 .no-photos-message h2 {
@@ -67,4 +70,64 @@
 
 .no-photos-message p {
     font-size: 0.9em;
+}
+
+.photo-menu-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 20;
+    /* Above photo, below other overlays if needed */
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+    /* --- Hover Effect --- */
+    opacity: 0;
+    /* Hidden by default */
+    transform: scale(0.9);
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out, background-color 0.2s;
+}
+
+/* Show the button when hovering over the entire photo section */
+.photo-display-section:hover .photo-menu-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.photo-menu-btn:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* For the SVG icon inside the button */
+.photo-menu-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Container to hold the stacked images */
+.photo-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Styles for BOTH slideshow images */
+.slideshow-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }

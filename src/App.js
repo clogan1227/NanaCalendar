@@ -1,14 +1,16 @@
 import React, { useState } from 'react'; // Import useState
 import { db, storage } from './firebase'; // Import Firebase storage instance
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase storage functions
-import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore"; // Firestore functions
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage"; // Firebase storage functions
+import { collection, addDoc, serverTimestamp, Timestamp, doc, deleteDoc } from "firebase/firestore"; // Firestore functions
 import { v4 as uuidv4 } from 'uuid'; // Unique file names
 import EXIF from 'exif-js'; // Extracting metadata from photos
 
 import './App.css';
 import PhotoDisplay from './components/PhotoDisplay/PhotoDisplay';
 import CalendarView from './components/CalendarView/CalendarView';
-import PhotoUploader from './components/PhotoUploader/PhotoUploader';
+import MainMenu from './components/MainMenu/MainMenu';
+import PhotoManager from './components/PhotoManager/PhotoManager';
+import ManualEventCreator from './components/ManualEventCreator/ManualEventCreator';
 
 // Wraps the callback-based EXIF.getData in a Promise
 const parseExifData = (file) => {
@@ -36,58 +38,122 @@ const parseExifData = (file) => {
 };
 
 function App() {
-  const [isUploaderOpen, setIsUploaderOpen] = useState(false);
+  const [isMainMenuOpen, setIsMainMenuOpen] = useState(false);
+  const [isPhotoPageOpen, setIsPhotoPageOpen] = useState(false);
+  const [isAddEventPageOpen, setIsAddEventPageOpen] = useState(false);
 
-  const handlePhotoUpload = async (file) => {
-    if (!file) {
-      throw new Error("No file provided.");
+  const isOverlayOpen = isMainMenuOpen || isPhotoPageOpen || isAddEventPageOpen;
+
+  const handleMultipleUploads = async (files) => {
+    console.log(`Uploading ${files.length} files...`);
+    const uploadPromises = files.map(async (file) => {
+      try {
+        // Parse EXIF data from the provided file
+        const exifData = await parseExifData(file);
+
+        // Create a unique filename and Firebase reference
+        const fileName = `images/${uuidv4()}-${file.name}`;
+        const storageRef = ref(storage, fileName);
+
+        // Upload the file
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        // Prepare the data object for Firestore
+        const photoDataToSave = {
+          imageUrl: downloadURL,
+          storagePath: fileName, // Important for easy deletion
+          fileName: file.name,
+          createdAt: serverTimestamp(),
+          dateTaken: exifData.dateTaken,
+          cameraMake: exifData.cameraMake,
+          cameraModel: exifData.cameraModel,
+        };
+        await addDoc(collection(db, "photos"), photoDataToSave);
+      } catch (error) {
+        console.error(`Failed to upload ${file.name}:`, error);
+      }
+    });
+    await Promise.all(uploadPromises);
+    console.log("All uploads finished.");
+  };
+
+  const handlePhotoDelete = async (photo) => {
+    if (!window.confirm(`Are you sure you want to delete the photo: "${photo.fileName}"?`)) {
+      return;
     }
+    try {
+      if (photo.storagePath) {
+        const storageRef = ref(storage, photo.storagePath);
+        await deleteObject(storageRef);
+      }
+      const docRef = doc(db, "photos", photo.id);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      alert("Failed to delete photo. Please try again.");
+    }
+  };
 
-    // Parse EXIF data from the provided file
-    const exifData = await parseExifData(file);
+  const handleMultipleDeletes = async (photosToDelete) => {
+    if (!window.confirm(`Are you sure you want to delete ${photosToDelete.length} selected photos?`)) return;
+    const deletePromises = photosToDelete.map(photo => handlePhotoDelete(photo));
+    console.log("Deleting multiple photos...");
+    await Promise.all(deletePromises);
+    console.log("Finished deleting selected photos.");
+  };
 
-    // Create a unique filename and Firebase reference
-    const fileName = `images/${uuidv4()}-${file.name}`;
-    const storageRef = ref(storage, fileName);
+  const handleManualEventAdd = async (eventData) => {
+    try {
+      await addDoc(collection(db, "events"), eventData);
+      console.log("Event with recurrence added successfully from manual page!");
+    } catch (error) {
+      console.error("Error adding event: ", error);
+    }
+  };
 
-    // Upload the file
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    console.log('File available at', downloadURL);
+  const openPhotoManager = () => {
+    setIsMainMenuOpen(false);
+    setIsPhotoPageOpen(true);
+  };
 
-    // Prepare the data object for Firestore
-    const photoDataToSave = {
-      imageUrl: downloadURL,
-      fileName: file.name,
-      createdAt: serverTimestamp(),
-      dateTaken: exifData.dateTaken,
-      cameraMake: exifData.cameraMake,
-      cameraModel: exifData.cameraModel,
-    };
-
-    // Save the metadata to Firestore
-    const photosCollectionRef = collection(db, "photos");
-    await addDoc(photosCollectionRef, photoDataToSave);
-
-    // If we reach here, the upload was successful.
-    // The function implicitly returns a resolved Promise.
+  const openAddEventPage = () => {
+    setIsMainMenuOpen(false);
+    setIsAddEventPageOpen(true);
   };
 
   return (
     <div className="app-container">
-      <PhotoDisplay />
+      <PhotoDisplay
+        showMenuButton={!isOverlayOpen}
+        onOpenMenu={() => setIsMainMenuOpen(true)}
+      />
       <CalendarView />
-      <button
+      {/* <button
         className="floating-upload-btn"
-        onClick={() => setIsUploaderOpen(true)}
-        title="Upload Photo"
+        onClick={() => setIsMainMenuOpen(true)}
+        title="Open Menu"
       >
         +
-      </button>
-      <PhotoUploader
-        isOpen={isUploaderOpen}
-        onClose={() => setIsUploaderOpen(false)}
-        onUpload={handlePhotoUpload} // Pass the refactored function as a prop
+      </button> */}
+
+      <MainMenu
+        isOpen={isMainMenuOpen}
+        onClose={() => setIsMainMenuOpen(false)}
+        onOpenPhotoManager={openPhotoManager}
+        onOpenAddEvent={openAddEventPage}
+      />
+      <PhotoManager
+        isOpen={isPhotoPageOpen}
+        onClose={() => setIsPhotoPageOpen(false)}
+        onUploadMultiple={handleMultipleUploads}
+        onDelete={handlePhotoDelete}
+        onMultiDelete={handleMultipleDeletes}
+      />
+      <ManualEventCreator
+        isOpen={isAddEventPageOpen}
+        onClose={() => setIsAddEventPageOpen(false)}
+        onEventAdd={handleManualEventAdd}
       />
     </div>
   );

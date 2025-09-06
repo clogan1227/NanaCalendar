@@ -1,0 +1,74 @@
+.photo-manager-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f0f2f5; /* A light grey app background */
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Allow scrolling if content overflows */
+}
+
+.photo-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    flex-shrink: 0; /* Prevent header from shrinking */
+    position: sticky; /* Keep header at the top on scroll */
+    top: 0;
+    z-index: 10;
+}
+
+.photo-manager-header h1 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.close-button {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #888;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.photo-manager-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.photo-manager-actions button {
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+    cursor: pointer;
+}
+
+.photo-manager-actions button:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.photo-manager-grid {
+    padding: 20px;
+    display: grid;
+    /* This creates a responsive grid that fits as many items as possible */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    flex-grow: 1; /* Allows the grid to fill the remaining space */
+}

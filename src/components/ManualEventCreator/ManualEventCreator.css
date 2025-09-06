@@ -1,4 +1,5 @@
-.event-modal-overlay {
+/* This is the full-screen, semi-transparent background */
+.add-event-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.6);
@@ -9,7 +10,7 @@
 }
 
 /* This is the white floating card that holds the content */
-.event-modal-content {
+.add-event-content {
     background: #fff;
     padding: 20px 30px;
     border-radius: 8px;
@@ -19,14 +20,14 @@
     position: relative; /* For positioning the close button */
 }
 
-.event-modal-content h2 {
+.add-event-content h2 {
     margin-top: 0;
     margin-bottom: 20px;
     text-align: center;
 }
 
 /* The close button in the top-right corner of the card */
-.event-modal-content .close-button {
+.add-event-content .close-button {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -40,44 +41,38 @@
 }
 
 /* Generic styles for form fields and inputs */
-.event-modal-field {
+.add-event-field {
     margin-bottom: 20px;
     text-align: left;
 }
 
-.event-modal-field label {
+.add-event-field label {
     display: block;
     margin-bottom: 8px;
-    font-weight: bold; /* --- BOLD LABELS --- */
+    font-weight: bold;
 }
 
-.event-modal-input,
-.event-modal-field select,
-.event-modal-field .react-datepicker-wrapper,
-.event-modal-field .react-datepicker__input-container input {
+.add-event-input,
+.add-event-field select,
+.add-event-field .react-datepicker-wrapper,
+.add-event-field .react-datepicker__input-container input {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
-    background-color: white;
+    background-color: white; /* Ensure select has a background */
 }
 
 /* Styles for the action buttons at the bottom */
-.event-modal-buttons {
+.add-event-buttons {
     display: flex;
-    justify-content: space-between; /* Pushes delete button left, others right */
-    align-items: center;
+    justify-content: flex-end; /* Pushes buttons to the right */
     gap: 10px;
     margin-top: 20px;
 }
 
-.buttons-right {
-    display: flex;
-    gap: 10px;
-}
-
-.event-modal-buttons button {
+.add-event-buttons button {
     padding: 10px 15px;
     border: none;
     border-radius: 4px;
@@ -85,17 +80,12 @@
     font-size: 1em;
 }
 
-.event-modal-buttons .button-primary {
+.add-event-buttons .button-primary {
     background-color: #007bff;
     color: white;
 }
 
-.event-modal-buttons .button-secondary {
+.add-event-buttons .button-secondary {
     background-color: #6c757d;
-    color: white;
-}
-
-.event-modal-buttons .button-danger {
-    background-color: #dc3545;
     color: white;
 }
