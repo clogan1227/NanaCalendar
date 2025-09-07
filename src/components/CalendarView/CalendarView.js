@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
@@ -25,6 +25,12 @@ const localizer = dateFnsLocalizer({
     locales,
 });
 
+const CustomHeader = ({ date, localizer }) => {
+    // We receive the 'date' for the column and the 'localizer'.
+    // We use the localizer to format the date into the full weekday name ('eeee').
+    return <span>{localizer.format(date, 'eeee')}</span>;
+};
+
 const MonthEvent = ({ event, localizer }) => {
     // If it's an all-day event, just show the title
     if (event.allDay) {
@@ -42,7 +48,7 @@ const MonthEvent = ({ event, localizer }) => {
             </span>
         </div>
     );
-    };
+};
 
 function CalendarView() {
     const [events, setEvents] = useState([]);
@@ -76,19 +82,64 @@ function CalendarView() {
 
     // --- Generate holidays using useMemo ---
     const holidays = useMemo(() => {
-        const hd = new Holidays('US', 'wa');
+        const year = date.getFullYear();
 
-        // Get all holidays for the year of the currently viewed date
-        const holidayEvents = hd.getHolidays(date.getFullYear());
+        // Step 1: Get the raw data for US Federal holidays
+        const hd = new Holidays('US');
+        const federalHolidays = hd.getHolidays(year);
 
-        return holidayEvents.map(holiday => ({
+        // Step 2: Create the raw data for custom Christian holidays
+        const easterHoliday = hd.getHolidays(year).find(h => h.name === 'Easter Sunday');
+
+        if (!easterHoliday) {
+            console.error("Could not determine the date of Easter.");
+            // Fallback: return only the federal holidays if Easter can't be found
+            return federalHolidays.map(holiday => ({
+                title: holiday.name,
+                start: new Date(holiday.date),
+                end: new Date(holiday.date),
+                allDay: true,
+                isHoliday: true,
+            }));
+        }
+        const easter = new Date(easterHoliday.date);
+        const millisecondsInDay = 24 * 60 * 60 * 1000;
+
+        const customHolidays = [
+            { name: 'Ash Wednesday', date: new Date(easter.getTime() - 46 * millisecondsInDay) },
+            { name: 'Palm Sunday', date: new Date(easter.getTime() - 7 * millisecondsInDay) },
+            { name: 'Good Friday', date: new Date(easter.getTime() - 2 * millisecondsInDay) },
+            { name: 'Easter Sunday', date: easter },
+            { name: 'Christmas Day', date: new Date(year, 11, 25) },
+        ];
+
+        // Step 3: Combine the two lists and remove duplicates
+        const combinedHolidays = [...federalHolidays, ...customHolidays];
+        const uniqueHolidays = [];
+        const seenDates = new Set(); // Keep track of dates we've already added
+
+        combinedHolidays.forEach(holiday => {
+            const dateString = new Date(holiday.date).toISOString().split('T')[0];
+            if (!seenDates.has(dateString)) {
+                uniqueHolidays.push(holiday);
+                seenDates.add(dateString);
+            }
+        });
+
+        // Step 4: Filter out any unwanted holidays by name
+        const filteredHolidays = uniqueHolidays.filter(
+            holiday => holiday.name !== 'Day after Thanksgiving Day'
+        );
+
+        // Step 5: Format the final, filtered list for the calendar
+        return filteredHolidays.map(holiday => ({
             title: holiday.name,
             start: new Date(holiday.date),
             end: new Date(holiday.date),
             allDay: true,
-            isHoliday: true, // Add a custom property to style them differently
+            isHoliday: true,
         }));
-    }, [date]); // Re-calculate only when the date (and thus potentially the year) changes
+    }, [date]);
 
     // const allEvents = useMemo(() => [...events, ...holidays], [events, holidays]);
 
@@ -124,6 +175,14 @@ function CalendarView() {
 
         return [...expandedEvents, ...holidays];
     }, [events, holidays, date]); // Re-expand when the view date changes
+
+    const eventPropGetter = useMemo(() => (event) => {
+        const newProps = {};
+        if (event.isHoliday) {
+            newProps.className = 'is-holiday'; // Apply our custom holiday class
+        }
+        return newProps;
+    }, []);
 
     // --- HANDLER TO OPEN THE MODAL ---
     const handleSelectSlot = (slotInfo) => {
@@ -194,6 +253,7 @@ function CalendarView() {
     const { components, formats } = useMemo(
         () => ({
             components: {
+                header: (props) => <CustomHeader {...props} localizer={localizer} />,
                 // Use our custom component for the 'event' in the 'month' view
                 month: {
                     event: (props) => <MonthEvent {...props} localizer={localizer} />,
@@ -209,7 +269,7 @@ function CalendarView() {
     );
 
     return (
-        <div className="calendar-container" style={{ height: '50%', background: 'white', padding: '10px' }}>
+        <div className="calendar-container" style={{ height: '50%', padding: '10px' }}>
             <Calendar
                 localizer={localizer}
                 events={allEvents}
@@ -223,8 +283,8 @@ function CalendarView() {
                 onSelectEvent={handleSelectEvent}
                 components={components}
                 formats={formats}
-                views={Object.values(Views)}
-                defaultView={Views.MONTH}
+                views={['month']}
+                eventPropGetter={eventPropGetter}
             />
             <EventCreator
                 isOpen={isModalOpen}

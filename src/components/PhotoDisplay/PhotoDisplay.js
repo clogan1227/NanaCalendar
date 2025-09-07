@@ -122,16 +122,11 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
                     />
                 )}
             </div>
-            {topImage && (topImage.fileName || topImage.dateTaken) && (
+            {topImage && topImage.dateTaken && (
                 <div className="photo-metadata-overlay">
-                    {topImage.fileName && (
-                        <div className="photo-filename">{topImage.fileName}</div>
-                    )}
-                    {topImage.dateTaken && (
-                        <div className="photo-capture-date">
-                            Taken: {formatPhotoTimestamp(topImage.dateTaken)}
-                        </div>
-                    )}
+                    <div className="photo-capture-date">
+                        Taken: {formatPhotoTimestamp(topImage.dateTaken)}
+                    </div>
                 </div>
             )}
         </div>
