@@ -1,0 +1,159 @@
+/* src/components/CalendarView/CalendarView.css */
+
+/* --- Main Calendar Container --- */
+.calendar-container {
+    height: 100%;
+    padding: 25px;
+    /* --- MODIFIED: This now matches the App's background for a seamless look --- */
+    background-color: #334155;
+    border-top: none;
+}
+
+/* --- Toolbar (Month Name and Navigation) --- */
+.rbc-toolbar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+    background-color: #334155;
+    padding: 15px 25px;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid #4a5c75;
+}
+
+.rbc-toolbar .rbc-toolbar-label {
+    order: 1;
+    flex-grow: 1;
+    text-align: left;
+    font-size: 2.2em;
+    font-weight: 600;
+    color: #f8fafc;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.rbc-toolbar .rbc-btn-group {
+    order: 2;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* --- BUTTONS FIX: White background with dark text --- */
+.rbc-toolbar button {
+    background: #ffffff !important;
+    /* White background */
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    /* Dark grey text for contrast */
+    border-radius: 8px !important;
+    padding: 8px 14px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.rbc-toolbar button:hover,
+.rbc-toolbar button:focus {
+    background: #f9fafb !important;
+    border-color: #9ca3af !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07) !important;
+}
+
+/* --- END BUTTONS FIX --- */
+
+/* --- WEEKDAY HEADERS FIX --- */
+.rbc-header {
+    padding: 14px 8px;
+    text-align: right;
+    font-weight: 700;
+    /* Increased to bold */
+    font-size: 0.85em;
+    /* Slightly smaller to compensate for uppercase */
+    color: #334155;
+    /* Using the dark slate from the toolbar for high contrast */
+    background-color: #f1f5f9;
+    /* A more distinct but still soft blue-grey background */
+    border-bottom: 1px solid #d1d5db;
+    /* A stronger bottom border */
+    border-top: 1px solid #d1d5db;
+    /* A top border to create a "bar" effect */
+    letter-spacing: 0.05em;
+    /* Adds a touch of refinement to the spacing */
+}
+
+/* --- END WEEKDAY HEADERS FIX --- */
+
+/* --- Main Calendar Grid --- */
+.rbc-month-view {
+    border: 1px solid #d1d5db;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    background-color: #ffffff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
+}
+
+/* --- Individual Date Cells --- */
+.rbc-day-bg {
+    border-left: 1px solid #e5e7eb;
+}
+
+.rbc-day-bg:first-child {
+    border-left: none;
+}
+
+.rbc-month-row {
+    border-top: 1px solid #e5e7eb;
+}
+
+.rbc-month-row:first-child {
+    border-top: none;
+}
+
+.rbc-date-cell {
+    text-align: right;
+    padding: 8px;
+}
+
+/* --- Special Date Cell Styles --- */
+.rbc-off-range-bg {
+    background-color: #f9fafb;
+}
+
+.rbc-off-range .rbc-date-cell {
+    color: #d1d5db;
+}
+
+.rbc-today {
+    background-color: #fefce8;
+}
+
+.rbc-date-cell.rbc-now {
+    font-weight: 700;
+    color: #ca8a04;
+    background-color: transparent;
+}
+
+/* --- Event Styles --- */
+.rbc-event {
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.85em;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    background: linear-gradient(to bottom, #64748b, #475569);
+}
+
+.rbc-event.is-holiday {
+    /* A rich, celebratory gold-to-amber gradient */
+    background: linear-gradient(to bottom, #f59e0b, #b45309);
+    /* A slightly stronger top border to enhance the "jewel" effect */
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.rbc-event-content {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
