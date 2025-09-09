@@ -1,9 +1,17 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import { getAuth } from "firebase/auth";
+/**
+ * @file firebase.js
+ * @description This file handles the initialization of all Firebase services used
+ * throughout the application. It configures and exports singleton instances of
+ * Firestore, Storage, and Auth, and includes a robust setup for enabling
+ * Firestore's offline data persistence with a fallback mechanism.
+ */
 
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { CACHE_SIZE_UNLIMITED, getFirestore, initializeFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+// Configuration object for Firebase, securely loaded from environment variables.
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -13,30 +21,42 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
+// Initializes the core Firebase app instance.
 const app = initializeApp(firebaseConfig);
 
+// A variable to hold the Firestore database instance.
 let db;
+
+/**
+ * Attempts to initialize Firestore with offline persistence enabled. This allows
+ * the application to work with cached data even when offline. If persistence
+ * fails to initialize (e.g., due to multiple tabs being open), it gracefully
+ * falls back to the standard online-only mode.
+ */
 try {
   db = initializeFirestore(app, {
-    // This enables offline persistence.
-    // CACHE_SIZE_UNLIMITED means there's no specific limit on the cache size.
+    // This enables offline data caching with no size limit.
     cacheSizeBytes: CACHE_SIZE_UNLIMITED,
   });
   console.log("Firestore persistence enabled.");
-}
-catch (err) {
+} catch (err) {
   console.error("Error enabling Firestore persistence:", err);
-  if (err.code === 'failed-precondition') {
-    // This can happen if multiple tabs are open.
-    console.warn("Firestore persistence failed: multiple tabs open? The app will still work online.");
-  } else if (err.code === 'unimplemented') {
-    // The browser does not support all of the features required.
+  // Handles a common issue where persistence is blocked by another open tab.
+  if (err.code === "failed-precondition") {
+    console.warn(
+      "Firestore persistence failed: multiple tabs open? App will work online.",
+    );
+    // Handles cases where the browser does not support the required features.
+  } else if (err.code === "unimplemented") {
     console.error("Firestore persistence is not available in this browser.");
   }
-  db = getFirestore(app); // Optional: fallback to online-only mode
+  // Fallback to the standard online-only Firestore instance if persistence fails.
+  db = getFirestore(app);
 }
 
+// Initializes and exports the Firebase Storage service.
 const storage = getStorage(app);
+// Initializes and exports the Firebase Authentication service.
 const auth = getAuth(app);
 
 export { db, storage, auth };

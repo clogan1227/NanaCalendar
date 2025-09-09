@@ -1,15 +1,10 @@
-/* src/components/CalendarView/CalendarView.css */
-
-/* --- Main Calendar Container --- */
 .calendar-container {
     height: 100%;
     padding: 25px;
-    /* --- MODIFIED: This now matches the App's background for a seamless look --- */
     background-color: #334155;
     border-top: none;
 }
 
-/* --- Toolbar (Month Name and Navigation) --- */
 .rbc-toolbar {
     display: flex;
     align-items: center;
@@ -37,13 +32,10 @@
     flex-shrink: 0;
 }
 
-/* --- BUTTONS FIX: White background with dark text --- */
 .rbc-toolbar button {
     background: #ffffff !important;
-    /* White background */
     border: 1px solid #d1d5db !important;
     color: #374151 !important;
-    /* Dark grey text for contrast */
     border-radius: 8px !important;
     padding: 8px 14px !important;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
@@ -59,31 +51,18 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07) !important;
 }
 
-/* --- END BUTTONS FIX --- */
-
-/* --- WEEKDAY HEADERS FIX --- */
 .rbc-header {
     padding: 14px 8px;
     text-align: right;
     font-weight: 700;
-    /* Increased to bold */
     font-size: 0.85em;
-    /* Slightly smaller to compensate for uppercase */
     color: #334155;
-    /* Using the dark slate from the toolbar for high contrast */
     background-color: #f1f5f9;
-    /* A more distinct but still soft blue-grey background */
     border-bottom: 1px solid #d1d5db;
-    /* A stronger bottom border */
     border-top: 1px solid #d1d5db;
-    /* A top border to create a "bar" effect */
     letter-spacing: 0.05em;
-    /* Adds a touch of refinement to the spacing */
 }
 
-/* --- END WEEKDAY HEADERS FIX --- */
-
-/* --- Main Calendar Grid --- */
 .rbc-month-view {
     border: 1px solid #d1d5db;
     border-top: none;
@@ -92,7 +71,6 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
 }
 
-/* --- Individual Date Cells --- */
 .rbc-day-bg {
     border-left: 1px solid #e5e7eb;
 }
@@ -114,7 +92,6 @@
     padding: 8px;
 }
 
-/* --- Special Date Cell Styles --- */
 .rbc-off-range-bg {
     background-color: #f9fafb;
 }
@@ -133,7 +110,6 @@
     background-color: transparent;
 }
 
-/* --- Event Styles --- */
 .rbc-event {
     padding: 4px 8px;
     border-radius: 6px;
@@ -146,9 +122,7 @@
 }
 
 .rbc-event.is-holiday {
-    /* A rich, celebratory gold-to-amber gradient */
     background: linear-gradient(to bottom, #f59e0b, #b45309);
-    /* A slightly stronger top border to enhance the "jewel" effect */
     border-top: 1px solid rgba(255, 255, 255, 0.4);
 }
 

@@ -1,23 +1,24 @@
-/* This is the full-screen, semi-transparent background */
 .add-event-overlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* This is the white floating card that holds the content */
 .add-event-content {
     background: #fff;
     padding: 20px 30px;
     border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     width: 90%;
     max-width: 400px;
-    position: relative; /* For positioning the close button */
+    position: relative;
 }
 
 .add-event-content h2 {
@@ -26,7 +27,6 @@
     text-align: center;
 }
 
-/* The close button in the top-right corner of the card */
 .add-event-content .close-button {
     position: absolute;
     top: 10px;
@@ -40,7 +40,6 @@
     line-height: 1;
 }
 
-/* Generic styles for form fields and inputs */
 .add-event-field {
     margin-bottom: 20px;
     text-align: left;
@@ -61,13 +60,12 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     box-sizing: border-box;
-    background-color: white; /* Ensure select has a background */
+    background-color: white;
 }
 
-/* Styles for the action buttons at the bottom */
 .add-event-buttons {
     display: flex;
-    justify-content: flex-end; /* Pushes buttons to the right */
+    justify-content: flex-end;
     gap: 10px;
     margin-top: 20px;
 }

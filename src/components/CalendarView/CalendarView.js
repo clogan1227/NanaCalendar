@@ -1,22 +1,33 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import format from 'date-fns/format';
-import parse from 'date-fns/parse';
-import startOfWeek from 'date-fns/startOfWeek';
-import getDay from 'date-fns/getDay';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import './CalendarView.css';
-import EventCreator from '../EventCreator/EventCreator';
-import { db } from '../../firebase';
+/**
+ * @file CalendarView.js
+ * @description This component renders the main calendar interface. It is responsible for
+ * fetching and displaying events from Firestore, generating holidays, expanding
+ * recurring events for the current view, and handling user interactions like
+ * creating, updating, and deleting events via EventCreator.
+ */
+
+import React, { useState, useEffect, useMemo } from "react";
+
+import { endOfMonth, startOfMonth } from "date-fns";
+import format from "date-fns/format";
+import getDay from "date-fns/getDay";
+import parse from "date-fns/parse";
+import startOfWeek from "date-fns/startOfWeek";
+import Holidays from "date-holidays"; // For generating holiday events
 import { collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
-import Holidays from 'date-holidays';
-import { RRule } from 'rrule';
-import { startOfMonth, endOfMonth } from 'date-fns';
+import { Calendar, dateFnsLocalizer } from "react-big-calendar"; // The calendar component
+import { RRule } from "rrule"; // For handling recurring event logic
 
+import { db } from "../../firebase";
+import EventCreator from "../EventCreator/EventCreator";
+
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import "./CalendarView.css";
+
+// Required setup for react-big-calendar to handle date formatting.
 const locales = {
-    'en-US': require('date-fns/locale/en-US'),
+    "en-US": require("date-fns/locale/en-US"),
 };
-
 const localizer = dateFnsLocalizer({
     format,
     parse,
@@ -25,50 +36,61 @@ const localizer = dateFnsLocalizer({
     locales,
 });
 
+/**
+ * A custom component to render the header for each day column in the calendar.
+ * Displays the full name of the weekday (e.g., "Monday").
+ */
 const CustomHeader = ({ date, localizer }) => {
-    // We receive the 'date' for the column and the 'localizer'.
-    // We use the localizer to format the date into the full weekday name ('eeee').
-    return <span>{localizer.format(date, 'eeee')}</span>;
+    return <span>{localizer.format(date, "eeee")}</span>;
 };
 
+/**
+ * A custom component for rendering an event within the month view.
+ * Shows only the title for all-day events, and title + time for timed events.
+ */
 const MonthEvent = ({ event, localizer }) => {
-    // If it's an all-day event, just show the title
     if (event.allDay) {
         return <strong>{event.title}</strong>;
     }
-
-    // If it's not an all-day event, show the time and the title
     return (
         <div>
-            {/* Format the time using 'p' for short time, e.g., "7:00 PM" */}
             <strong>{event.title}</strong>
             <span> - </span>
-            <span style={{ marginRight: '5px' }}>
-                {localizer.format(event.start, 'p')}
+            <span style={{ marginRight: "5px" }}>
+                {localizer.format(event.start, "p")}
             </span>
         </div>
     );
 };
 
 function CalendarView() {
+    // Stores events fetched directly from Firestore.
     const [events, setEvents] = useState([]);
+    // Tracks the current month/year the calendar is displaying.
     const [date, setDate] = useState(new Date());
+    // Controls the visibility of the EventCreator modal.
     const [isModalOpen, setIsModalOpen] = useState(false);
+    // Holds info about a selected time slot for creating a new event.
     const [selectedSlot, setSelectedSlot] = useState(null);
+    // Holds the data of an existing event that is being edited.
     const [editingEvent, setEditingEvent] = useState(null);
 
-    // --- FETCH EVENTS FROM FIRESTORE ---
+    /**
+     * This effect sets up a real-time listener to the 'events' collection in Firestore.
+     * It automatically updates the component's state whenever events are added,
+     * modified, or deleted in the database.
+     */
     useEffect(() => {
         const eventsCollectionRef = collection(db, "events");
-        const q = query(eventsCollectionRef); // can add orderBy here later
+        const q = query(eventsCollectionRef);
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const firestoreEvents = querySnapshot.docs.map(doc => {
+            const firestoreEvents = querySnapshot.docs.map((doc) => {
                 const data = doc.data();
                 return {
                     ...data,
                     id: doc.id,
-                    // Convert Firestore Timestamps to JS Date objects
+                    // Convert Firestore Timestamps back to JS Date objects for the calendar.
                     start: data.start.toDate(),
                     end: data.end.toDate(),
                     until: data.until ? data.until.toDate() : null,
@@ -77,163 +99,167 @@ function CalendarView() {
             setEvents(firestoreEvents);
         });
 
-        return () => unsubscribe(); // Cleanup listener
+        // Cleans up the listener when the component unmounts to prevent memory leaks.
+        return () => unsubscribe();
     }, []);
 
-    // --- Generate holidays using useMemo ---
+    /**
+     * Memoized calculation of holidays. This prevents the holiday generation logic
+     * from re-running on every render, only recalculating when the displayed year changes.
+     */
     const holidays = useMemo(() => {
         const year = date.getFullYear();
-
-        // Step 1: Get the raw data for US Federal holidays
-        const hd = new Holidays('US');
+        const hd = new Holidays("US");
         const federalHolidays = hd.getHolidays(year);
 
-        // Step 2: Create the raw data for custom Christian holidays
-        const easterHoliday = hd.getHolidays(year).find(h => h.name === 'Easter Sunday');
+        // Manually calculate dates for Christian holidays relative to Easter.
+        const easterHoliday = hd
+            .getHolidays(year)
+            .find((h) => h.name === "Easter Sunday");
+        if (!easterHoliday) return []; // Failsafe if Easter can't be found
+        const easter = new Date(easterHoliday.date);
+        const dayMs = 24 * 60 * 60 * 1000;
+        const customHolidays = [
+            { name: "Ash Wednesday", date: new Date(easter.getTime() - 46 * dayMs) },
+            { name: "Palm Sunday", date: new Date(easter.getTime() - 7 * dayMs) },
+            { name: "Good Friday", date: new Date(easter.getTime() - 2 * dayMs) },
+            { name: "Easter Sunday", date: easter },
+            { name: "Christmas Day", date: new Date(year, 11, 25) },
+        ];
 
-        if (!easterHoliday) {
-            console.error("Could not determine the date of Easter.");
-            // Fallback: return only the federal holidays if Easter can't be found
-            return federalHolidays.map(holiday => ({
+        // Combine, de-duplicate, and format all holidays for the calendar.
+        const allRawHolidays = [...federalHolidays, ...customHolidays];
+        const uniqueHolidays = Array.from(
+            new Map(
+                // FIX: Wrap h.date in new Date() to handle both string and Date object types.
+                allRawHolidays.map((h) => [
+                    new Date(h.date).toISOString().split("T")[0],
+                    h,
+                ]),
+            ).values(),
+        );
+
+        return uniqueHolidays
+            .filter((holiday) => holiday.name !== "Day after Thanksgiving Day")
+            .map((holiday) => ({
                 title: holiday.name,
                 start: new Date(holiday.date),
                 end: new Date(holiday.date),
                 allDay: true,
-                isHoliday: true,
+                isHoliday: true, // Custom flag for styling
             }));
-        }
-        const easter = new Date(easterHoliday.date);
-        const millisecondsInDay = 24 * 60 * 60 * 1000;
-
-        const customHolidays = [
-            { name: 'Ash Wednesday', date: new Date(easter.getTime() - 46 * millisecondsInDay) },
-            { name: 'Palm Sunday', date: new Date(easter.getTime() - 7 * millisecondsInDay) },
-            { name: 'Good Friday', date: new Date(easter.getTime() - 2 * millisecondsInDay) },
-            { name: 'Easter Sunday', date: easter },
-            { name: 'Christmas Day', date: new Date(year, 11, 25) },
-        ];
-
-        // Step 3: Combine the two lists and remove duplicates
-        const combinedHolidays = [...federalHolidays, ...customHolidays];
-        const uniqueHolidays = [];
-        const seenDates = new Set(); // Keep track of dates we've already added
-
-        combinedHolidays.forEach(holiday => {
-            const dateString = new Date(holiday.date).toISOString().split('T')[0];
-            if (!seenDates.has(dateString)) {
-                uniqueHolidays.push(holiday);
-                seenDates.add(dateString);
-            }
-        });
-
-        // Step 4: Filter out any unwanted holidays by name
-        const filteredHolidays = uniqueHolidays.filter(
-            holiday => holiday.name !== 'Day after Thanksgiving Day'
-        );
-
-        // Step 5: Format the final, filtered list for the calendar
-        return filteredHolidays.map(holiday => ({
-            title: holiday.name,
-            start: new Date(holiday.date),
-            end: new Date(holiday.date),
-            allDay: true,
-            isHoliday: true,
-        }));
     }, [date]);
 
-    // const allEvents = useMemo(() => [...events, ...holidays], [events, holidays]);
-
-    // --- COMBINE user events and holidays for the calendar ---
+    /**
+     * Memoized calculation that combines user events and holidays. Crucially, it
+     * expands recurring events into individual instances that fall within the
+     * currently viewed month. This is a performance-critical calculation.
+     */
     const allEvents = useMemo(() => {
-        const expandedEvents = events.flatMap(event => {
-            if (event.recurrence && event.recurrence !== 'none') {
-                const ruleOptions = {
+        const expandedEvents = events.flatMap((event) => {
+            // If the event has a recurrence rule, expand it.
+            if (event.recurrence && event.recurrence !== "none") {
+                const rule = new RRule({
                     freq: RRule[event.recurrence.toUpperCase()],
                     dtstart: event.start,
-                    until: event.until, // Pass the 'until' date directly to the rule
-                };
+                    until: event.until,
+                });
 
-                const rule = new RRule(ruleOptions);
-
-                // Get the start and end of the currently visible month for expansion range
+                // Define the date range for the current calendar view.
                 const viewStart = startOfMonth(date);
                 const viewEnd = endOfMonth(date);
 
+                // Generate all occurrences within the current view.
                 const dates = rule.between(viewStart, viewEnd);
 
-                // Create an event instance for each occurrence
-                return dates.map(occurrenceDate => ({
-                    ...event,
-                    // Override start and end for this specific instance
-                    start: occurrenceDate,
-                    end: new Date(occurrenceDate.getTime() + (event.end.getTime() - event.start.getTime())),
-                }));
+                // Map each occurrence to a full calendar event object.
+                return dates.map((occurrenceDate) => {
+                    const duration = event.end.getTime() - event.start.getTime();
+                    return {
+                        ...event,
+                        start: occurrenceDate,
+                        end: new Date(occurrenceDate.getTime() + duration),
+                    };
+                });
             }
-            // This is a regular, non-recurring event
+            // Otherwise, return the single, non-recurring event.
             return event;
         });
 
         return [...expandedEvents, ...holidays];
-    }, [events, holidays, date]); // Re-expand when the view date changes
+    }, [events, holidays, date]); // Recalculates if events, holidays, or the view date change.
 
-    const eventPropGetter = useMemo(() => (event) => {
-        const newProps = {};
-        if (event.isHoliday) {
-            newProps.className = 'is-holiday'; // Apply our custom holiday class
-        }
-        return newProps;
-    }, []);
+    /**
+     * Memoized function to apply custom styling to events.
+     * This adds a specific CSS class to events marked as holidays.
+     */
+    const eventPropGetter = useMemo(
+        () => (event) => ({
+            ...(event.isHoliday && { className: "is-holiday" }),
+        }),
+        [],
+    );
 
-    // --- HANDLER TO OPEN THE MODAL ---
+    /**
+    // Memoized object containing custom components and formats for the calendar.
+    // Using useMemo prevents these objects from being recreated on every render.
+     */
+    const { components, formats } = useMemo(
+        () => ({
+            components: {
+                header: (props) => <CustomHeader {...props} localizer={localizer} />,
+                month: {
+                    event: (props) => <MonthEvent {...props} localizer={localizer} />,
+                },
+            },
+            formats: {
+                eventTimeRangeFormat: ({ start }, culture, localizer) =>
+                    localizer.format(start, "p", culture),
+            },
+        }),
+        [],
+    );
+
+    // Opens the modal in 'create' mode when a user clicks/drags on an empty slot.
     const handleSelectSlot = (slotInfo) => {
         setEditingEvent(null);
         setSelectedSlot(slotInfo);
         setIsModalOpen(true);
     };
 
-    // --- HANDLER TO SELECT EVENT ---
+    // Opens the modal in 'edit' mode when a user clicks an existing event.
     const handleSelectEvent = (event) => {
+        // Do not allow editing of generated holiday events.
+        if (event.isHoliday) return;
         setEditingEvent(event);
         setSelectedSlot(null);
         setIsModalOpen(true);
     };
 
-    // --- HANDLER TO ADD EVENT TO FIRESTORE ---
+    // --- Firestore Data Handlers ---
+
+    // Adds a new event document to Firestore.
     const handleEventAdd = async (eventData) => {
         try {
-            const eventsCollectionRef = collection(db, "events");
-            await addDoc(eventsCollectionRef, {
-                title: eventData.title,
-                start: eventData.start, // This is already a JS Date object
-                end: eventData.end,     // This is also a JS Date object
-                allDay: eventData.allDay,
-                recurrence: eventData.recurrence,
-                until: eventData.until,
-            });
+            await addDoc(collection(db, "events"), eventData);
             console.log("Event added successfully!");
         } catch (error) {
             console.error("Error adding event: ", error);
         }
     };
 
-    // --- Handler to UPDATE event in Firestore ---
+    // Updates an existing event document in Firestore.
     const handleEventUpdate = async (eventData) => {
         try {
             const eventDocRef = doc(db, "events", eventData.id);
-            await updateDoc(eventDocRef, {
-                title: eventData.title,
-                start: eventData.start,
-                end: eventData.end,
-                allDay: eventData.allDay,
-                recurrence: eventData.recurrence,
-                until: eventData.until,
-            });
+            await updateDoc(eventDocRef, eventData);
             console.log("Event updated successfully!");
         } catch (error) {
             console.error("Error updating event: ", error);
         }
     };
 
+    // Deletes an event document from Firestore.
     const handleEventDelete = async (eventId) => {
         try {
             const eventDocRef = doc(db, "events", eventId);
@@ -244,38 +270,24 @@ function CalendarView() {
         }
     };
 
+    // Resets state and closes the EventCreator modal.
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingEvent(null);
         setSelectedSlot(null);
     };
 
-    const { components, formats } = useMemo(
-        () => ({
-            components: {
-                header: (props) => <CustomHeader {...props} localizer={localizer} />,
-                // Use our custom component for the 'event' in the 'month' view
-                month: {
-                    event: (props) => <MonthEvent {...props} localizer={localizer} />,
-                },
-            },
-            formats: {
-                // This format is still useful for Week and Day views
-                eventTimeRangeFormat: ({ start }, culture, localizer) =>
-                    localizer.format(start, 'p', culture),
-            },
-        }),
-        [] // Empty dependency array means this object is created only once
-    );
-
     return (
-        <div className="calendar-container" style={{ height: '50%', padding: '10px' }}>
+        <div
+            className="calendar-container"
+            style={{ height: "50%", padding: "10px" }}
+        >
             <Calendar
                 localizer={localizer}
                 events={allEvents}
                 startAccessor="start"
                 endAccessor="end"
-                style={{ height: '100%' }}
+                style={{ height: "100%" }}
                 selectable={true}
                 onSelectSlot={handleSelectSlot}
                 date={date}
@@ -283,7 +295,7 @@ function CalendarView() {
                 onSelectEvent={handleSelectEvent}
                 components={components}
                 formats={formats}
-                views={['month']}
+                views={["month"]}
                 eventPropGetter={eventPropGetter}
             />
             <EventCreator

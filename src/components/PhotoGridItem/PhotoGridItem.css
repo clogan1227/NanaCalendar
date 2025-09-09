@@ -2,15 +2,15 @@
     position: relative;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    aspect-ratio: 1 / 1; /* Makes the items perfectly square */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    aspect-ratio: 1 / 1;
     cursor: pointer;
 }
 
 .photo-grid-item img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Ensures image fills the square without distortion */
+    object-fit: cover;
     display: block;
     transition: transform 0.2s ease-in-out;
 }
@@ -28,7 +28,7 @@
     background-color: rgba(0, 0, 0, 0.3);
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
-    border: 3px solid transparent; /* Prepare for selection border */
+    border: 3px solid transparent;
     box-sizing: border-box;
 }
 
@@ -79,6 +79,6 @@
 }
 
 .delete-photo-button:hover {
-    background-color: #dc3545; /* Red on hover */
+    background-color: #dc3545;
     transform: scale(1.1);
 }

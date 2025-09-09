@@ -12,46 +12,39 @@ code {
     monospace;
 }
 
-/* Apply box-sizing globally */
 * {
   box-sizing: border-box;
 }
 
-/* Center the login box on the screen */
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(
-    135deg,
-    #0b3d0b,  /* deep forest green */
-    #145214,  /* dark leafy green */
-    #1e5631,  /* medium forest green */
-    #4f7942   /* mossy green highlight */
-  );
+  background: linear-gradient(135deg,
+      #0b3d0b,
+      #145214,
+      #1e5631,
+      #4f7942);
   font-family: Arial, sans-serif;
-  padding: 1rem; /* Prevent edges from touching on small screens */
+  padding: 1rem;
 }
 
-/* The white card */
 .login-box {
   background: white;
   padding: 2rem;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 500px; /* Limit width on large screens */
+  max-width: 500px;
   text-align: center;
 }
 
-/* Title */
 .login-box h2 {
   margin-bottom: 1.5rem;
   color: #333;
 }
 
-/* Inputs */
 .login-input {
   width: 100%;
   padding: 0.75rem;
@@ -68,7 +61,6 @@ code {
   outline: none;
 }
 
-/* Button */
 .login-button {
   width: 100%;
   padding: 0.75rem;
@@ -92,14 +84,12 @@ code {
   transform: translateY(0);
 }
 
-/* Error message */
 .login-error {
   color: red;
   margin-top: 0.5rem;
   font-size: 0.9rem;
 }
 
-/* 📱 Mobile adjustments */
 @media (max-width: 480px) {
   .login-box {
     padding: 1.5rem;
@@ -117,7 +107,6 @@ code {
   }
 }
 
-/* 💻 Larger screens */
 @media (min-width: 768px) {
   .login-box {
     max-width: 500px;

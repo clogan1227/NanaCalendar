@@ -1,8 +1,8 @@
 .weather-display {
     display: flex;
     align-items: center;
-    justify-content: center; /* Or left/right as preferred */
-    margin-top: 10px; /* Space from date/time */
+    justify-content: center;
+    margin-top: 10px;
     font-size: 1.5em;
     color: white;
 }

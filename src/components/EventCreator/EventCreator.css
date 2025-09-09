@@ -1,22 +1,24 @@
 .event-modal-overlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* This is the white floating card that holds the content */
 .event-modal-content {
     background: #fff;
     padding: 20px 30px;
     border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     width: 90%;
     max-width: 400px;
-    position: relative; /* For positioning the close button */
+    position: relative;
 }
 
 .event-modal-content h2 {
@@ -25,7 +27,6 @@
     text-align: center;
 }
 
-/* The close button in the top-right corner of the card */
 .event-modal-content .close-button {
     position: absolute;
     top: 10px;
@@ -39,7 +40,6 @@
     line-height: 1;
 }
 
-/* Generic styles for form fields and inputs */
 .event-modal-field {
     margin-bottom: 20px;
     text-align: left;
@@ -48,7 +48,7 @@
 .event-modal-field label {
     display: block;
     margin-bottom: 8px;
-    font-weight: bold; /* --- BOLD LABELS --- */
+    font-weight: bold;
 }
 
 .event-modal-input,
@@ -63,18 +63,11 @@
     background-color: white;
 }
 
-/* Styles for the action buttons at the bottom */
 .event-modal-buttons {
     display: flex;
-    justify-content: space-between; /* Pushes delete button left, others right */
     align-items: center;
     gap: 10px;
     margin-top: 20px;
-}
-
-.buttons-right {
-    display: flex;
-    gap: 10px;
 }
 
 .event-modal-buttons button {
@@ -83,6 +76,11 @@
     border-radius: 4px;
     cursor: pointer;
     font-size: 1em;
+    white-space: nowrap;
+}
+
+.event-modal-buttons .button-secondary {
+    margin-left: auto;
 }
 
 .event-modal-buttons .button-primary {
@@ -98,4 +96,5 @@
 .event-modal-buttons .button-danger {
     background-color: #dc3545;
     color: white;
+    margin-top: 0px;
 }

@@ -1,15 +1,15 @@
 .datetime-display {
-    text-align: left; /* Or left/right as preferred for the overlay */
-    color: white; /* Assuming white text on a photo background */
+    text-align: left;
+    color: white;
     font-family: Arial, sans-serif;
 }
 
 .date-display {
-    font-size: 1.2em; /* Adjust as needed */
+    font-size: 1.2em;
     margin-bottom: 5px;
 }
 
 .time-display {
-    font-size: 2.5em; /* Adjust as needed */
+    font-size: 2.5em;
     font-weight: bold;
 }

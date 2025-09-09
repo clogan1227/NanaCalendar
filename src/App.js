@@ -1,21 +1,36 @@
-import React, { useState } from 'react'; // Import useState
-import { db, storage } from './firebase'; // Import Firebase storage instance
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage"; // Firebase storage functions
-import { collection, addDoc, serverTimestamp, Timestamp, doc, deleteDoc } from "firebase/firestore"; // Firestore functions
-import { v4 as uuidv4 } from 'uuid'; // Unique file names
-import EXIF from 'exif-js'; // Extracting metadata from photos
+/**
+ * @file App.js
+ * @description This is the root component of the application. It orchestrates the main
+ * UI components, manages the state for various overlays (main menu, photo manager,
+ * event creator), and handles core Firebase interactions like photo uploads,
+ * deletions, and event creation.
+ */
 
-import './App.css';
-import PhotoDisplay from './components/PhotoDisplay/PhotoDisplay';
-import CalendarView from './components/CalendarView/CalendarView';
-import MainMenu from './components/MainMenu/MainMenu';
-import PhotoManager from './components/PhotoManager/PhotoManager';
-import ManualEventCreator from './components/ManualEventCreator/ManualEventCreator';
+import React, { useState } from "react";
 
-// Wraps the callback-based EXIF.getData in a Promise
+import EXIF from "exif-js"; // For reading metadata from image files
+import { collection, addDoc, serverTimestamp, Timestamp, doc, deleteDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
+
+import CalendarView from "./components/CalendarView/CalendarView";
+import MainMenu from "./components/MainMenu/MainMenu";
+import ManualEventCreator from "./components/ManualEventCreator/ManualEventCreator";
+import PhotoDisplay from "./components/PhotoDisplay/PhotoDisplay";
+import PhotoManager from "./components/PhotoManager/PhotoManager";
+import { db, storage } from "./firebase"; // Firebase service instances
+
+import "./App.css";
+
+/**
+ * Wraps the callback-based EXIF.getData function in a modern Promise for use with async/await.
+ * @param {File} file - The image file to parse for EXIF data.
+ * @returns {Promise<object>} A promise that resolves with an object containing the
+ * date taken, camera make, and camera model.
+ */
 const parseExifData = (file) => {
   return new Promise((resolve) => {
-    EXIF.getData(file, function() {
+    EXIF.getData(file, function () {
       const allMetaData = EXIF.getAllTags(this);
       const dateTaken = allMetaData.DateTimeOriginal || allMetaData.DateTime;
 
@@ -30,7 +45,7 @@ const parseExifData = (file) => {
           cameraModel: allMetaData.Model || null,
         });
       } else {
-        // Resolve with nulls if no date is found
+        // Resolve with nulls if no date metadata is found in the image.
         resolve({ dateTaken: null, cameraMake: null, cameraModel: null });
       }
     });
@@ -38,31 +53,38 @@ const parseExifData = (file) => {
 };
 
 function App() {
+  // State for controlling the visibility of the main menu overlay.
   const [isMainMenuOpen, setIsMainMenuOpen] = useState(false);
+  // State for controlling the visibility of the photo manager page/overlay.
   const [isPhotoPageOpen, setIsPhotoPageOpen] = useState(false);
+  // State for controlling the visibility of the manual event creator page/overlay.
   const [isAddEventPageOpen, setIsAddEventPageOpen] = useState(false);
 
-  const isOverlayOpen = isMainMenuOpen || isPhotoPageOpen || isAddEventPageOpen;
+  // A derived boolean to easily check if any overlay is currently active.
+  const isOverlayOpen =
+    isMainMenuOpen || isPhotoPageOpen || isAddEventPageOpen;
 
+  /**
+   * Handles the upload process for multiple files simultaneously.
+   * For each file, it parses EXIF data, uploads the file to Firebase Storage,
+   * and then saves the file's metadata and URL to Firestore.
+   * @param {File[]} files - An array of File objects to be uploaded.
+   */
   const handleMultipleUploads = async (files) => {
     console.log(`Uploading ${files.length} files...`);
     const uploadPromises = files.map(async (file) => {
       try {
-        // Parse EXIF data from the provided file
         const exifData = await parseExifData(file);
 
-        // Create a unique filename and Firebase reference
         const fileName = `images/${uuidv4()}-${file.name}`;
         const storageRef = ref(storage, fileName);
 
-        // Upload the file
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        // Prepare the data object for Firestore
         const photoDataToSave = {
           imageUrl: downloadURL,
-          storagePath: fileName, // Important for easy deletion
+          storagePath: fileName, // Store path for easy deletion later
           fileName: file.name,
           createdAt: serverTimestamp(),
           dateTaken: exifData.dateTaken,
@@ -78,31 +100,83 @@ function App() {
     console.log("All uploads finished.");
   };
 
-  const handlePhotoDelete = async (photo) => {
-    if (!window.confirm(`Are you sure you want to delete the photo: "${photo.fileName}"?`)) {
+  /**
+   * Deletes a single photo. This involves deleting the file from Firebase Storage
+   * and then the document from Firestore. It now includes a 'skipConfirmation'
+   * parameter to bypass the confirmation dialog when called from a batch process.
+   * @param {object} photo - The photo object containing its ID and storagePath.
+   * @param {boolean} [skipConfirmation=false] - If true, the user confirmation prompt is skipped.
+   */
+  const handlePhotoDelete = async (photo, skipConfirmation = false) => {
+    // The confirmation dialog is now conditional.
+    if (
+      !skipConfirmation &&
+      !window.confirm(
+        `Are you sure you want to delete the photo: "${photo.fileName}"?`,
+      )
+    ) {
       return;
     }
     try {
+      // First, delete the file from Cloud Storage.
       if (photo.storagePath) {
         const storageRef = ref(storage, photo.storagePath);
         await deleteObject(storageRef);
       }
+      // Then, delete the document from the Firestore collection.
       const docRef = doc(db, "photos", photo.id);
       await deleteDoc(docRef);
     } catch (error) {
       console.error("Error deleting photo:", error);
-      alert("Failed to delete photo. Please try again.");
+      // This function will now throw an error on failure, allowing the
+      // calling function to handle alerts for a better user experience.
+      throw new Error(`Failed to delete ${photo.fileName}.`);
     }
   };
 
+  /**
+   * Orchestrates the deletion of multiple selected photos. It now uses Promise.allSettled
+   * to ensure all deletions are attempted, and then provides a single summary of
+   * any failures to the user.
+   * @param {object[]} photosToDelete - An array of photo objects to be deleted.
+   */
   const handleMultipleDeletes = async (photosToDelete) => {
-    if (!window.confirm(`Are you sure you want to delete ${photosToDelete.length} selected photos?`)) return;
-    const deletePromises = photosToDelete.map(photo => handlePhotoDelete(photo));
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${photosToDelete.length} selected photos?`,
+      )
+    )
+      return;
+
     console.log("Deleting multiple photos...");
-    await Promise.all(deletePromises);
+    // We call handlePhotoDelete with `true` to skip the individual confirmations.
+    const deletePromises = photosToDelete.map((photo) =>
+      handlePhotoDelete(photo, true),
+    );
+
+    // Promise.allSettled will wait for all promises to complete, whether they
+    // succeed or fail. This is better than Promise.all for this use case.
+    const results = await Promise.allSettled(deletePromises);
+
+    // We can now collect all the error messages from failed deletions.
+    const failedDeletions = results.filter((r) => r.status === "rejected");
+
+    if (failedDeletions.length > 0) {
+      // If there were any failures, show ONE alert summarizing them.
+      const errorMessages = failedDeletions
+        .map((fail) => fail.reason.message)
+        .join("\n");
+      alert(
+        `Some photos could not be deleted:\n\n${errorMessages}\n\nPlease try again.`,
+      );
+    }
     console.log("Finished deleting selected photos.");
   };
 
+  /**
+   * Adds a new event document to the 'events' collection in Firestore.
+   * @param {object} eventData - The event data to be saved.
+   */
   const handleManualEventAdd = async (eventData) => {
     try {
       await addDoc(collection(db, "events"), eventData);
@@ -112,11 +186,13 @@ function App() {
     }
   };
 
+  // Manages UI state transition from the main menu to the photo manager.
   const openPhotoManager = () => {
     setIsMainMenuOpen(false);
     setIsPhotoPageOpen(true);
   };
 
+  // Manages UI state transition from the main menu to the add event page.
   const openAddEventPage = () => {
     setIsMainMenuOpen(false);
     setIsAddEventPageOpen(true);
@@ -129,14 +205,8 @@ function App() {
         onOpenMenu={() => setIsMainMenuOpen(true)}
       />
       <CalendarView />
-      {/* <button
-        className="floating-upload-btn"
-        onClick={() => setIsMainMenuOpen(true)}
-        title="Open Menu"
-      >
-        +
-      </button> */}
 
+      {/* The following components are overlays managed by component state */}
       <MainMenu
         isOpen={isMainMenuOpen}
         onClose={() => setIsMainMenuOpen(false)}

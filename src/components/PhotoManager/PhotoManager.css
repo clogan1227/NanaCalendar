@@ -4,11 +4,11 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #f0f2f5; /* A light grey app background */
+    background-color: #f0f2f5;
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    overflow-y: auto; /* Allow scrolling if content overflows */
+    overflow-y: auto;
 }
 
 .photo-manager-header {
@@ -17,9 +17,9 @@
     align-items: center;
     padding: 15px 25px;
     background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    flex-shrink: 0; /* Prevent header from shrinking */
-    position: sticky; /* Keep header at the top on scroll */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    position: sticky;
     top: 0;
     z-index: 10;
 }
@@ -67,8 +67,7 @@
 .photo-manager-grid {
     padding: 20px;
     display: grid;
-    /* This creates a responsive grid that fits as many items as possible */
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 15px;
-    flex-grow: 1; /* Allows the grid to fill the remaining space */
+    flex-grow: 1;
 }
