@@ -17,6 +17,16 @@ import "./PhotoDisplay.css";
 // Defines the duration each photo is visible in the slideshow, in milliseconds.
 const SLIDESHOW_VISIBLE_DURATION_MS = 10000; // 10 seconds
 
+// Fisher-Yates shuffling algorithm used to randomize photo order
+function shuffleArray(array) {
+    let shuffled = [...array]; // copy the original array so we don’t mutate it directly
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // swap
+    }
+    return shuffled;
+}
+
 function PhotoDisplay({ showMenuButton, onOpenMenu }) {
     // Stores the array of photo objects fetched from Firestore.
     const [photos, setPhotos] = useState([]);
@@ -44,7 +54,8 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
                     id: doc.id,
                     ...doc.data(),
                 }));
-                setPhotos(photosData);
+                const shuffledPhotos = shuffleArray(photosData); // randomize order each snapshot
+                setPhotos(shuffledPhotos);
                 setIsLoading(false);
 
                 // After updating photos, ensure activeIndex is still valid.
