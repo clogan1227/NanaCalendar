@@ -12,13 +12,13 @@ import { onAuthStateChanged } from "firebase/auth"; // Firebase auth state liste
 import ReactDOM from "react-dom/client";
 
 import App from "./App";
-import { login, logout } from "./auth.js";
+import { login, loginWithToken, logout } from "./auth.js";
 import { auth } from "./firebase.js";
 
 import "./index.css";
 
 // A whitelist of email addresses permitted to access the application.
-const allowedEmails = ["clogan1227@gmail.com", "ekandoll@hotmail.com", "Ekandoll@hotmail.com"];
+const allowedEmails = ["clogan1227@gmail.com", "ekandoll@hotmail.com", "Ekandoll@hotmail.com", "kiosk@nanacalendar.com"];
 
 /**
  * A root wrapper component that handles the application's authentication logic.
@@ -52,6 +52,24 @@ function Root() {
 
     // Cleanup function to remove the listener and prevent memory leaks.
     return () => unsubscribe();
+  }, []);
+
+  // Auto-login if kiosk_token param is present
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const kioskToken = params.get("kiosk_token");
+
+    if (kioskToken) {
+      (async () => {
+        try {
+          console.log("Found kiosk token, logging in...");
+          await loginWithToken(kioskToken);
+        } catch (err) {
+          console.error("Kiosk login failed", err);
+          setLoading(false);
+        }
+      })();
+    }
   }, []);
 
   /**

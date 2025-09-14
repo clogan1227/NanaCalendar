@@ -18,10 +18,10 @@ function DateTimeDisplay() {
      * interval when the component unmounts, preventing performance issues and memory leaks.
      */
     useEffect(() => {
-        // Sets up an interval to call the update function every 1000 milliseconds.
+        // Sets up an interval to call the update function every 10000 milliseconds.
         const timerId = setInterval(() => {
             setCurrentDateTime(new Date());
-        }, 1000);
+        }, 10000);
 
         // The cleanup function that runs when the component is removed from the DOM.
         return () => clearInterval(timerId);
@@ -40,7 +40,7 @@ function DateTimeDisplay() {
             month: "long",
             day: "numeric",
         };
-        return date.toLocaleDateString(undefined, options);
+        return date.toLocaleDateString("en-US", options);
     };
 
     /**
@@ -53,7 +53,6 @@ function DateTimeDisplay() {
         const options = {
             hour: "2-digit",
             minute: "2-digit",
-            second: "2-digit",
             hour12: true, // Use AM/PM format
         };
         return date.toLocaleTimeString(undefined, options);

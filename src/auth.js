@@ -5,7 +5,7 @@
  * application.
  */
 
-import { signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, signInWithCustomToken } from "firebase/auth";
 
 import { auth } from "./firebase.js"; // The initialized Firebase auth instance
 
@@ -29,6 +29,24 @@ export async function login(email, password) {
         console.log("User logged in:", userCredential.user);
     } catch (error) {
         console.error("Error logging in:", error.message);
+        // Propagate the error so the UI layer can catch it and display a message.
+        throw error;
+    }
+}
+
+/**
+ * Signs in a user with authentication token. It sets the session persistence
+ * to 'local' to keep the user logged in across browser sessions.
+ * @param {string} token - Authentication token
+ * @throws Will re-throw any errors from Firebase for the calling function to handle.
+ */
+export async function loginWithToken(token) {
+    try {
+        // Ensures the user's session persists even after the browser tab is closed.
+        await setPersistence(auth, browserLocalPersistence);
+        return signInWithCustomToken(auth, token);
+    } catch (error) {
+        console.error("Error logging in with token:", error.message);
         // Propagate the error so the UI layer can catch it and display a message.
         throw error;
     }
