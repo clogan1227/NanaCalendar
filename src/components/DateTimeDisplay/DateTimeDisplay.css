@@ -1,3 +1,11 @@
+:root {
+    --font-scale: 1;
+}
+
+.pi-mode {
+    --font-scale: 2;
+}
+
 .datetime-display {
     text-align: left;
     color: white;
@@ -5,11 +13,11 @@
 }
 
 .date-display {
-    font-size: 1.2em;
+    font-size: calc(1.2em * var(--font-scale));
     margin-bottom: 5px;
 }
 
 .time-display {
-    font-size: 2.5em;
+    font-size: calc(2.5em * var(--font-scale));
     font-weight: bold;
 }

@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from "react";
 
+import { isPi } from "../../config/env";
 import "./DateTimeDisplay.css";
 
 function DateTimeDisplay() {
@@ -59,7 +60,7 @@ function DateTimeDisplay() {
     };
 
     return (
-        <div className="datetime-display">
+        <div className={`"datetime-display" ${isPi ? "pi-mode" : ""}`}>
             <div className="date-display">{formatDate(currentDateTime)}</div>
             <div className="time-display">{formatTime(currentDateTime)}</div>
         </div>

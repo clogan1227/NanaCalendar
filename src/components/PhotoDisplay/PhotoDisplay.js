@@ -9,6 +9,7 @@ import React, { useState, useEffect } from "react";
 
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
+import { isPi } from "../../config/env";
 import { db } from "../../firebase";
 import InfoOverlay from "../InfoOverlay/InfoOverlay";
 
@@ -177,7 +178,7 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
                 />
             </div>
             {activeImage && activeImage.dateTaken && (
-                <div className="photo-metadata-overlay">
+                <div className={`photo-metadata-overlay ${isPi ? "pi-mode" : ""}`}>
                     <div className="photo-capture-date">
                         Taken: {formatPhotoTimestamp(activeImage.dateTaken)}
                     </div>

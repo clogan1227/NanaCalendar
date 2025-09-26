@@ -1,3 +1,11 @@
+:root {
+    --font-scale: 1;
+}
+
+.pi-mode {
+    --font-scale: 2;
+}
+
 .photo-display-section {
     background-color: #000;
     height: 50%;
@@ -24,7 +32,7 @@
     color: white;
     padding: 5px 10px;
     border-radius: 4px;
-    font-size: 0.8em;
+    font-size: calc(0.6em * var(--font-scale));
     font-family: Arial, sans-serif;
     text-align: right;
     max-width: 70%;
@@ -41,7 +49,7 @@
 }
 
 .photo-capture-date {
-    font-size: 0.9em;
+    font-size: calc(0.6em * var(--font-scale));
 }
 
 .photo-camera-info {

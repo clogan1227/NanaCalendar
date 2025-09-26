@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 
+import { isPi } from "../../config/env";
 import { endOfMonth, startOfMonth } from "date-fns";
 import format from "date-fns/format";
 import getDay from "date-fns/getDay";
@@ -279,7 +280,7 @@ function CalendarView() {
 
     return (
         <div
-            className="calendar-container"
+            className={`calendar-container ${isPi ? "pi-mode" : ""}`}
             style={{ height: "50%", padding: "10px" }}
         >
             <Calendar

@@ -7,18 +7,19 @@
 
 import React from "react";
 
+import { isPi } from "../../config/env";
 import DateTimeDisplay from "../DateTimeDisplay/DateTimeDisplay";
-// import WeatherDisplay from '../WeatherDisplay/WeatherDisplay';
+import WeatherDisplay from '../WeatherDisplay/WeatherDisplay';
 
 import "./InfoOverlay.css";
 
 function InfoOverlay() {
     return (
-        <div className="info-overlay">
+        <div className={`info-overlay ${isPi ? "pi-mode" : ""}`}>
             <div className="info-overlay-content">
                 <DateTimeDisplay />
-                {/* Currently disabled due to lack of constant internet checks in offline mode */}
-                {/* <WeatherDisplay /> */}
+                {/* Conditionally render WeatherDisplay only on web */}
+                {!isPi && <WeatherDisplay />}
             </div>
         </div>
     );

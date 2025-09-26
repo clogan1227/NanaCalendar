@@ -1,3 +1,11 @@
+:root {
+    --font-scale: 1;
+}
+
+.pi-mode {
+    --font-scale: 2;
+}
+
 .info-overlay {
     position: absolute;
     top: 20px;
@@ -12,4 +20,5 @@
 .info-overlay-content {
     color: white;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    font-size: (1em * var(--font-scale));
 }

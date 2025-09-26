@@ -22,7 +22,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "cross-env REACT_APP_TARGET_ENV=web react-scripts build",
+    "build:pi": "cross-env REACT_APP_TARGET_ENV=raspi react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "node check-firebase-login.js && npm run build && firebase deploy"
@@ -50,5 +51,8 @@
     "resolve-url-loader": {
       "postcss": "^8.5.3"
     }
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0"
   }
 }
