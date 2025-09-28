@@ -7,7 +7,6 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react";
-
 import { isPi } from "../../config/env";
 import { endOfMonth, startOfMonth } from "date-fns";
 import format from "date-fns/format";
@@ -18,14 +17,11 @@ import Holidays from "date-holidays"; // For generating holiday events
 import { collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar"; // The calendar component
 import { RRule } from "rrule"; // For handling recurring event logic
-
 import { db } from "../../firebase";
 import EventCreator from "../EventCreator/EventCreator";
-
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarView.css";
 
-// Required setup for react-big-calendar to handle date formatting.
 const locales = {
     "en-US": require("date-fns/locale/en-US"),
 };
@@ -37,6 +33,53 @@ const localizer = dateFnsLocalizer({
     locales,
 });
 
+function AutoSizeText({ text }) {
+    const ref = React.useRef(null);
+    const [fontSize, setFontSize] = useState("1.2em");
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const parentStyle = window.getComputedStyle(el.parentElement);
+        const basePx = parseFloat(parentStyle.fontSize) || 16;
+        let sizeEm = 1.2;
+        const minEm = 0.9;
+        const maxWidth = el.parentElement.offsetWidth - 4;
+        const ctx = document.createElement("canvas").getContext("2d");
+        ctx.font = `${sizeEm * basePx}px Arial`;
+        while (ctx.measureText(text).width > maxWidth && sizeEm > minEm) {
+            sizeEm -= 0.05;
+            ctx.font = `${sizeEm * basePx}px Arial`;
+        }
+        setFontSize(`${sizeEm}em`);
+    }, [text]);
+
+    return (
+        <div
+            ref={ref}
+            style={{
+                fontSize,
+                whiteSpace: "normal",
+                lineHeight: 1.2,
+                wordBreak: "break-word",
+            }}
+        >
+            {text}
+        </div>
+    );
+}
+
+/**
+ * A custom component for rendering an event within the month view.
+ */
+const MonthEvent = ({ event }) => {
+    return (
+        <div className="event-wrapper">
+            <AutoSizeText text={event.title} />
+        </div>
+    );
+};
+
 /**
  * A custom component to render the header for each day column in the calendar.
  * Displays the full name of the weekday (e.g., "Monday").
@@ -46,52 +89,32 @@ const CustomHeader = ({ date, localizer }) => {
 };
 
 /**
- * A custom component for rendering an event within the month view.
- * Shows only the title for all-day events, and title + time for timed events.
+ * A custom component to render the calendar header without the buttons for pi-mode
  */
-const MonthEvent = ({ event, localizer }) => {
-    if (event.allDay) {
-        return <strong>{event.title}</strong>;
-    }
+const CustomToolbarPi = (toolbar) => {
     return (
-        <div>
-            <strong>{event.title}</strong>
-            <span> - </span>
-            <span style={{ marginRight: "5px" }}>
-                {localizer.format(event.start, "p")}
-            </span>
+        <div className="rbc-toolbar pi-toolbar">
+            <span className="rbc-toolbar-label">{toolbar.label}</span>
         </div>
     );
 };
 
 function CalendarView() {
-    // Stores events fetched directly from Firestore.
     const [events, setEvents] = useState([]);
-    // Tracks the current month/year the calendar is displaying.
     const [date, setDate] = useState(new Date());
-    // Controls the visibility of the EventCreator modal.
     const [isModalOpen, setIsModalOpen] = useState(false);
-    // Holds info about a selected time slot for creating a new event.
     const [selectedSlot, setSelectedSlot] = useState(null);
-    // Holds the data of an existing event that is being edited.
     const [editingEvent, setEditingEvent] = useState(null);
 
-    /**
-     * This effect sets up a real-time listener to the 'events' collection in Firestore.
-     * It automatically updates the component's state whenever events are added,
-     * modified, or deleted in the database.
-     */
     useEffect(() => {
         const eventsCollectionRef = collection(db, "events");
         const q = query(eventsCollectionRef);
-
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const firestoreEvents = querySnapshot.docs.map((doc) => {
                 const data = doc.data();
                 return {
                     ...data,
                     id: doc.id,
-                    // Convert Firestore Timestamps back to JS Date objects for the calendar.
                     start: data.start.toDate(),
                     end: data.end.toDate(),
                     until: data.until ? data.until.toDate() : null,
@@ -99,25 +122,15 @@ function CalendarView() {
             });
             setEvents(firestoreEvents);
         });
-
-        // Cleans up the listener when the component unmounts to prevent memory leaks.
         return () => unsubscribe();
     }, []);
 
-    /**
-     * Memoized calculation of holidays. This prevents the holiday generation logic
-     * from re-running on every render, only recalculating when the displayed year changes.
-     */
     const holidays = useMemo(() => {
         const year = date.getFullYear();
         const hd = new Holidays("US");
         const federalHolidays = hd.getHolidays(year);
-
-        // Manually calculate dates for Christian holidays relative to Easter.
-        const easterHoliday = hd
-            .getHolidays(year)
-            .find((h) => h.name === "Easter Sunday");
-        if (!easterHoliday) return []; // Failsafe if Easter can't be found
+        const easterHoliday = hd.getHolidays(year).find((h) => h.name === "Easter Sunday");
+        if (!easterHoliday) return [];
         const easter = new Date(easterHoliday.date);
         const dayMs = 24 * 60 * 60 * 1000;
         const customHolidays = [
@@ -127,19 +140,15 @@ function CalendarView() {
             { name: "Easter Sunday", date: easter },
             { name: "Christmas Day", date: new Date(year, 11, 25) },
         ];
-
-        // Combine, de-duplicate, and format all holidays for the calendar.
         const allRawHolidays = [...federalHolidays, ...customHolidays];
         const uniqueHolidays = Array.from(
             new Map(
-                // FIX: Wrap h.date in new Date() to handle both string and Date object types.
                 allRawHolidays.map((h) => [
                     new Date(h.date).toISOString().split("T")[0],
                     h,
                 ]),
             ).values(),
         );
-
         return uniqueHolidays
             .filter((holiday) => holiday.name !== "Day after Thanksgiving Day")
             .map((holiday) => ({
@@ -147,33 +156,21 @@ function CalendarView() {
                 start: new Date(holiday.date),
                 end: new Date(holiday.date),
                 allDay: true,
-                isHoliday: true, // Custom flag for styling
+                isHoliday: true,
             }));
     }, [date]);
 
-    /**
-     * Memoized calculation that combines user events and holidays. Crucially, it
-     * expands recurring events into individual instances that fall within the
-     * currently viewed month. This is a performance-critical calculation.
-     */
     const allEvents = useMemo(() => {
         const expandedEvents = events.flatMap((event) => {
-            // If the event has a recurrence rule, expand it.
             if (event.recurrence && event.recurrence !== "none") {
                 const rule = new RRule({
                     freq: RRule[event.recurrence.toUpperCase()],
                     dtstart: event.start,
                     until: event.until,
                 });
-
-                // Define the date range for the current calendar view.
                 const viewStart = startOfMonth(date);
                 const viewEnd = endOfMonth(date);
-
-                // Generate all occurrences within the current view.
                 const dates = rule.between(viewStart, viewEnd);
-
-                // Map each occurrence to a full calendar event object.
                 return dates.map((occurrenceDate) => {
                     const duration = event.end.getTime() - event.start.getTime();
                     return {
@@ -183,17 +180,11 @@ function CalendarView() {
                     };
                 });
             }
-            // Otherwise, return the single, non-recurring event.
             return event;
         });
-
         return [...expandedEvents, ...holidays];
-    }, [events, holidays, date]); // Recalculates if events, holidays, or the view date change.
+    }, [events, holidays, date]);
 
-    /**
-     * Memoized function to apply custom styling to events.
-     * This adds a specific CSS class to events marked as holidays.
-     */
     const eventPropGetter = useMemo(
         () => (event) => ({
             ...(event.isHoliday && { className: "is-holiday" }),
@@ -201,17 +192,12 @@ function CalendarView() {
         [],
     );
 
-    /**
-    // Memoized object containing custom components and formats for the calendar.
-    // Using useMemo prevents these objects from being recreated on every render.
-     */
     const { components, formats } = useMemo(
         () => ({
             components: {
+                toolbar: isPi ? CustomToolbarPi : undefined,
                 header: (props) => <CustomHeader {...props} localizer={localizer} />,
-                month: {
-                    event: (props) => <MonthEvent {...props} localizer={localizer} />,
-                },
+                month: { event: MonthEvent },
             },
             formats: {
                 eventTimeRangeFormat: ({ start }, culture, localizer) =>
@@ -221,25 +207,19 @@ function CalendarView() {
         [],
     );
 
-    // Opens the modal in 'create' mode when a user clicks/drags on an empty slot.
     const handleSelectSlot = (slotInfo) => {
         setEditingEvent(null);
         setSelectedSlot(slotInfo);
         setIsModalOpen(true);
     };
 
-    // Opens the modal in 'edit' mode when a user clicks an existing event.
     const handleSelectEvent = (event) => {
-        // Do not allow editing of generated holiday events.
         if (event.isHoliday) return;
         setEditingEvent(event);
         setSelectedSlot(null);
         setIsModalOpen(true);
     };
 
-    // --- Firestore Data Handlers ---
-
-    // Adds a new event document to Firestore.
     const handleEventAdd = async (eventData) => {
         try {
             await addDoc(collection(db, "events"), eventData);
@@ -249,7 +229,6 @@ function CalendarView() {
         }
     };
 
-    // Updates an existing event document in Firestore.
     const handleEventUpdate = async (eventData) => {
         try {
             const eventDocRef = doc(db, "events", eventData.id);
@@ -260,7 +239,6 @@ function CalendarView() {
         }
     };
 
-    // Deletes an event document from Firestore.
     const handleEventDelete = async (eventId) => {
         try {
             const eventDocRef = doc(db, "events", eventId);
@@ -271,7 +249,6 @@ function CalendarView() {
         }
     };
 
-    // Resets state and closes the EventCreator modal.
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingEvent(null);

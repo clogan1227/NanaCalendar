@@ -98,6 +98,7 @@
 .rbc-date-cell {
     text-align: right;
     padding: 8px;
+    font-size: 1.5em;
 }
 
 .rbc-off-range-bg {
@@ -113,7 +114,7 @@
 }
 
 .rbc-date-cell.rbc-now {
-    font-weight: 700;
+    font-weight: 1000;
     color: #ca8a04;
     background-color: transparent;
 }
@@ -146,4 +147,20 @@
 
 .calendar-container.pi-mode .rbc-event {
     font-size: calc(0.6em * var(--font-scale)) !important;
+}
+
+.pi-toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: left;
+    padding: 12px 20px;
+    background-color: #334155;
+    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid #4a5c75;
+}
+
+.pi-toolbar .rbc-toolbar-label {
+    font-size: calc(1.5em * var(--font-scale));
+    font-weight: 600;
+    color: #f8fafc;
 }
