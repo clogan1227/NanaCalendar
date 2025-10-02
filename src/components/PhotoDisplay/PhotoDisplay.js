@@ -37,6 +37,8 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
     const [activeIndex, setActiveIndex] = useState(0);
     // A boolean to control which of the two image elements is on top for the cross-fade.
     const [isImageA_OnTop, setIsImageA_OnTop] = useState(true);
+    // Boolean to indicate to user when new photos are being cached
+    const [isSyncing, setIsSyncing] = useState(false);
 
     /**
      * This effect runs once on component mount to establish a real-time listener
@@ -75,6 +77,43 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
 
         // Cleanup function to remove the listener when the component unmounts.
         return () => unsubscribe();
+    }, []);
+
+    //  Prefetch all photos into the service worker cache when Firestore updates.
+    useEffect(() => {
+        const imageUrls = photos.map((p) => p.imageUrl).filter(Boolean);
+        const uniqueUrls = [...new Set(imageUrls)];
+
+        if (
+            uniqueUrls.length > 0 &&
+            "serviceWorker" in navigator &&
+            navigator.serviceWorker.controller
+        ) {
+            setIsSyncing(true);
+            console.log("PhotoDisplay: sending photo URLs to SW for caching");
+            navigator.serviceWorker.controller.postMessage({
+                type: "CACHE_IMAGES",
+                payload: uniqueUrls,
+            });
+        }
+    }, [photos]);
+
+    //  Listen for "CACHE_COMPLETE" or errors from service worker
+    useEffect(() => {
+        const handleMessage = (event) => {
+            if (!event.data) return;
+            if (event.data.type === "CACHE_COMPLETE") {
+                console.log("SW finished caching images.");
+                setIsSyncing(false);
+            }
+            if (event.data.type === "CACHE_ERROR") {
+                console.warn("Some photos failed to cache:", event.data.failedUrls);
+                setIsSyncing(false);
+            }
+        };
+        navigator.serviceWorker.addEventListener("message", handleMessage);
+        return () =>
+            navigator.serviceWorker.removeEventListener("message", handleMessage);
     }, []);
 
     /**
@@ -151,6 +190,11 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
     return (
         <div className="photo-display-section">
             <InfoOverlay />
+            {isSyncing && (
+                <div className="sync-indicator">
+                    <p>Fetching new photos...</p>
+                </div>
+            )}
             {showMenuButton && (
                 <button className="photo-menu-btn" onClick={onOpenMenu} title="Open Menu">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">

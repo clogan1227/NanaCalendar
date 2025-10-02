@@ -8,7 +8,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { CACHE_SIZE_UNLIMITED, getFirestore, initializeFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Configuration object for Firebase, securely loaded from environment variables.
@@ -35,21 +35,12 @@ let db;
  */
 try {
   db = initializeFirestore(app, {
-    // This enables offline data caching with no size limit.
-    cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+    // This enables offline data caching
+    localCache: persistentLocalCache(),
   });
   console.log("Firestore persistence enabled.");
 } catch (err) {
   console.error("Error enabling Firestore persistence:", err);
-  // Handles a common issue where persistence is blocked by another open tab.
-  if (err.code === "failed-precondition") {
-    console.warn(
-      "Firestore persistence failed: multiple tabs open? App will work online.",
-    );
-    // Handles cases where the browser does not support the required features.
-  } else if (err.code === "unimplemented") {
-    console.error("Firestore persistence is not available in this browser.");
-  }
   // Fallback to the standard online-only Firestore instance if persistence fails.
   db = getFirestore(app);
 }

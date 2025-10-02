@@ -14,6 +14,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { login, loginWithToken, logout } from "./auth.js";
 import { auth } from "./firebase.js";
+import * as serviceWorker from './serviceWorkerRegistration.js';
 
 import "./index.css";
 
@@ -153,3 +154,5 @@ root.render(
     <Root />
   </React.StrictMode>,
 );
+
+serviceWorker.register();
