@@ -42,8 +42,8 @@ future reference.
 
 ## 📊 Summary
 
-- **Total Purchases:** 11  
-- **Total Spent:** $238.99  
+- **Total Purchases:** 13  
+- **Total Spent:** $269.84  
 
 
 ---
