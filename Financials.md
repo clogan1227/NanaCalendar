@@ -35,6 +35,8 @@ future reference.
 | 8-25-2025  | Mount-It! Small TV Monitor Wall Mount                     | Amazon.com      | $18.32     |
 | 8-26-2025  | uni SD Card Reader                                        | Amazon.com      | $8.61      |
 | 9-24-2025  | DS3231 Real Time Clock Module for Raspberry Pi            | piship.us       | $15.31     |
+| 10-4-2025  | CanaKit Raspberry Pi Fan                                  | Canakit.com     | $15.90     |
+| 10-4-2025  | CanaKit Raspberry Pi 4 PiSwitch (USB-C)                   | Canakit.com     | $14.95     |
 
 ---
 
