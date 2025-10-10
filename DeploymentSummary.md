@@ -26,7 +26,7 @@ npm run build
 I transferred the resulting folder to the Pi using SCP:
 
 ```bash
-scp -r build/ pi@<PI_IP_ADDRESS>:/home/pi/
+scp -r build/ pi@<PI_IP_ADDRESS>:~/
 ```
 
 This placed the build files in the Pi's home directory.
@@ -43,7 +43,7 @@ This script starts Chromium in kiosk mode and points it to the locally hosted ap
 # Set environment variable for display
 export DISPLAY=:0
 
-# Auth token for kiosk mode
+# Auth token for kiosk mode. Used to identify pi for automatic authentication without intervention
 KIOSK_TOKEN=""
 
 # Local URL for kiosk display
