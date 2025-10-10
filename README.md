@@ -95,25 +95,51 @@ Refer to `DeploymentSummary.md` for detailed setup and automation steps.
 
 ## Relevant File Structure
 nana-calendar/
+
 │
+
 ├── public/                     # Static assets and index.html
+
 ├── src/
+
 │   ├── components/
+
 │   │   ├── CalendarView/       # Main calendar component
+
 │   │   ├── DateTimeDisplay/    # Displays current date and time
+
 │   │   ├── EventCreator/       # Handles event creation
+
 │   │   ├── PhotoDisplay/       # Rotating photo display
+
 │   │   ├── PhotoManager/       # Full photo management interface
+
 │   │   ├── WeatherDisplay/     # Displays local weather
+
 │   │   └── ...                 # Other supporting UI components
+
 │   ├── App.js                  # Root application component
+
 │   ├── firebase.js             # Firebase initialization
+
 │   ├── auth.js                 # Authentication setup
+
 │   ├── index.js                # Application entry point
+
 │   ├── App.css / index.css     # Styling
+
 │   └── serviceWorkerRegistration.js # Service workers allow caching photos for offline use
+
 │
+
 ├── .env.web                    # Firebase config for web version
+
 ├── .env.raspi                  # Firebase config for Raspberry Pi version
+
 ├── package.json
+
 └── firebase.json               # Firebase hosting configuration
+
+
+## Summary
+Nana's Digital Photo Calendar is a personalized and persistent display system combining a photo slideshow with a live calendar view. It operates online through Firebase Hosting and offline on a Raspberry Pi kiosk, maintaining accessibility and reliability for continual daily use.
