@@ -9,8 +9,8 @@
 import React, { useState } from "react";
 
 import EXIF from "exif-js"; // For reading metadata from image files
-import { collection, addDoc, serverTimestamp, Timestamp, doc, deleteDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { collection, addDoc, Timestamp, doc, deleteDoc } from "firebase/firestore";
+import { ref, uploadBytes, deleteObject } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
 
 import CalendarView from "./components/CalendarView/CalendarView";
@@ -65,39 +65,42 @@ function App() {
     isMainMenuOpen || isPhotoPageOpen || isAddEventPageOpen;
 
   /**
-   * Handles the upload process for multiple files simultaneously.
-   * For each file, it parses EXIF data, uploads the file to Firebase Storage,
-   * and then saves the file's metadata and URL to Firestore.
-   * @param {File[]} files - An array of File objects to be uploaded.
-   */
+     * Handles the client-side process for uploading multiple raw image files.
+     * For each file, this function parses EXIF data, attaches that data to the
+     * file as custom metadata, and uploads the raw file to a temporary
+     * 'raw-uploads/' directory in Firebase Storage. This function's sole
+     * responsibility is to get the raw file and its metadata into Storage;
+     * a Cloud Function is responsible for all subsequent processing and
+     * database entries.
+     * @param {File[]} files - An array of File objects from a file input element.
+     */
   const handleMultipleUploads = async (files) => {
-    console.log(`Uploading ${files.length} files...`);
+    console.log(`Uploading ${files.length} raw files...`);
     const uploadPromises = files.map(async (file) => {
       try {
         const exifData = await parseExifData(file);
 
-        const fileName = `images/${uuidv4()}-${file.name}`;
-        const storageRef = ref(storage, fileName);
+        const fileName = `${uuidv4()}-${file.name}`;
+        const storageRef = ref(storage, `raw-uploads/${fileName}`);
 
-        const snapshot = await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(snapshot.ref);
-
-        const photoDataToSave = {
-          imageUrl: downloadURL,
-          storagePath: fileName, // Store path for easy deletion later
-          fileName: file.name,
-          createdAt: serverTimestamp(),
-          dateTaken: exifData.dateTaken,
-          cameraMake: exifData.cameraMake,
-          cameraModel: exifData.cameraModel,
+        const metadata = {
+          customMetadata: {
+            dateTaken: exifData.dateTaken || "unknown",
+            cameraMake: exifData.cameraMake || "unknown",
+            cameraModel: exifData.cameraModel || "unknown",
+            originalFileName: file.name, // Keep the original name
+          },
         };
-        await addDoc(collection(db, "photos"), photoDataToSave);
+
+        await uploadBytes(storageRef, file, metadata);
+        console.log(`Successfully uploaded raw file: ${file.name}`);
       } catch (error) {
-        console.error(`Failed to upload ${file.name}:`, error);
+        console.error(`Failed to upload raw file ${file.name}:`, error);
       }
     });
+
     await Promise.all(uploadPromises);
-    console.log("All uploads finished.");
+    console.log("All raw file uploads finished.");
   };
 
   /**
