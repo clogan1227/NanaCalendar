@@ -1,4 +1,4 @@
-// V2 SYNTAX: Import the specific trigger functions you need
+// Import the specific trigger functions you need
 const {onObjectFinalized} = require("firebase-functions/v2/storage");
 const {onRequest} = require("firebase-functions/v2/https");
 
@@ -22,32 +22,31 @@ const storage = getStorage();
 const MAX_WIDTH = 1080;
 const MAX_HEIGHT = 960;
 
-// V2 SYNTAX for Storage Trigger
 exports.processAndSavePhoto = onObjectFinalized(
     {region: "us-west1", memory: "512MiB"}, async (event) => {
-      // In v2, the 'object' is now located at 'event.data'
       const fileBucket = event.data.bucket;
       const filePath = event.data.name;
       const contentType = event.data.contentType;
-      const fileMetadata = event.data.metadata || {};
-      const customMetadata = fileMetadata.customMetadata || {};
 
       const bucket = storage.bucket(fileBucket);
 
       if (!contentType.startsWith("image/") ||
-            !filePath.startsWith("raw-uploads/")) {
+      !filePath.startsWith("raw-uploads/")) {
         console.log("Not an image or not in the correct folder. Exiting.");
         return null;
       }
 
-      const fileName = path.basename(filePath);
-      const tempFilePath = path.join(os.tmpdir(), fileName);
-
       try {
-        await bucket.file(filePath).download({destination: tempFilePath});
-        console.log("Image downloaded to", tempFilePath);
+      // Extract document ID from the uploaded filename.
+        const docId = path.basename(filePath, path.extname(filePath));
+        console.log(`Processing photo for Firestore document ID: ${docId}`);
 
-        const newFileName = `${path.parse(fileName).name}.webp`;
+        const tempFilePath = path.join(os.tmpdir(), path.basename(filePath));
+        await bucket.file(filePath).download({destination: tempFilePath});
+
+        // Process the image.
+        const newFileName = `${docId}.webp`; // Use the ID for the new name too
+        const newFilePath = `processed-images/${newFileName}`;
         const tempNewPath = path.join(os.tmpdir(), newFileName);
 
         await sharp(tempFilePath)
@@ -59,7 +58,6 @@ exports.processAndSavePhoto = onObjectFinalized(
             .webp({quality: 80})
             .toFile(tempNewPath);
 
-        const newFilePath = `processed-images/${newFileName}`;
         const [uploadedFile] = await bucket.upload(tempNewPath, {
           destination: newFilePath,
           metadata: {contentType: "image/webp"},
@@ -71,29 +69,31 @@ exports.processAndSavePhoto = onObjectFinalized(
           expires: "03-09-2491",
         }).then((urls) => urls[0]);
 
-        const photoDataToSave = {
+        // Get reference to existing document and update it.
+        const photoRef = db.collection("photos").doc(docId);
+
+        await photoRef.update({
+          status: "complete",
           imageUrl: downloadURL,
           storagePath: newFilePath,
-          fileName: customMetadata.originalFileName || "unknown",
-          createdAt: new Date(),
-          dateTaken: customMetadata.dateTaken || "unknown",
-          cameraMake: customMetadata.cameraMake || "unknown",
-          cameraModel: customMetadata.cameraModel || "unknown",
-        };
+        });
+        console.log(`Successfully updated document: ${docId}`);
 
-        await db.collection("photos").add(photoDataToSave);
-        console.log("Firestore document created successfully.");
-
+        // Clean up original file.
         await bucket.file(filePath).delete();
         fs.unlinkSync(tempFilePath);
         fs.unlinkSync(tempNewPath);
       } catch (error) {
         console.error("Failed to process image:", error);
+        const docId = path.basename(filePath, path.extname(filePath));
+        if (docId) {
+          await db.collection("photos")
+              .doc(docId).update({status: "error"});
+        }
       }
       return null;
     });
 
-// V2 SYNTAX for HTTPS Trigger
 exports.backfillExistingImages = onRequest(
     {region: "us-west1", memory: "512MiB"}, async (req, res) => {
       const photosRef = db.collection("photos");
@@ -113,8 +113,8 @@ exports.backfillExistingImages = onRequest(
         const originalPath = photoData.storagePath;
 
         if (!originalPath ||
-                originalPath.endsWith(".webp") ||
-                originalPath.startsWith("processed-images/")) {
+        originalPath.endsWith(".webp") ||
+        originalPath.startsWith("processed-images/")) {
           return;
         }
 
@@ -166,35 +166,4 @@ exports.backfillExistingImages = onRequest(
       await Promise.all(processingPromises);
 
       res.send(`Complete. Success: ${successCount}, Errs: ${errorCount}`);
-    });
-
-exports.resetPaths = onRequest(
-    {region: "us-west1", memory: "256MiB"}, async (req, res) => {
-      const photosRef = db.collection("photos");
-      const snapshot = await photosRef.get();
-
-      if (snapshot.empty) {
-        res.send("No photos found to reset.");
-        return;
-      }
-
-      const resetPromises = snapshot.docs.map(async (doc) => {
-        const photoData = doc.data();
-        const currentPath = photoData.storagePath;
-
-        // We only care about documents pointing to the processed folder
-        if (currentPath && currentPath.startsWith("processed-images/")) {
-          // Reconstruct the original path from the fileName field
-          const originalPath = `images/${photoData.fileName}`;
-
-          // Update the document to reset it
-          return doc.ref.update({
-            storagePath: originalPath,
-          });
-        }
-      });
-
-      await Promise.all(resetPromises);
-
-      res.send("Reset complete. The 18 records should now be fixed.");
     });

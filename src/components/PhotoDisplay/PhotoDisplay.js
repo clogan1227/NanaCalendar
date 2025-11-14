@@ -97,15 +97,40 @@ function PhotoDisplay({ showMenuButton, onOpenMenu }) {
     }, [activeIndex, photos, isLoading]);
 
     /**
-     * A helper function to format a Firestore Timestamp into a readable string.
-     * @param {object|null} timestamp - The Firestore Timestamp object.
-     * @returns {string|null} The formatted date and time string, or null.
-     */
-    const formatPhotoTimestamp = (timestamp) => {
-        if (!timestamp || typeof timestamp.toDate !== "function") {
+       * A helper function to format a date value into a readable string.
+       * This function is backwards-compatible and can handle both Firestore
+       * Timestamp objects (for old data) and ISO 8601 strings (for new data).
+       * @param {object|string|null} dateValue - The value from Firestore, which can
+       * be a Timestamp object, an ISO string, the string "unknown", or null.
+       * @returns {string} The formatted date and time string, or a fallback message.
+       */
+    const formatPhotoTimestamp = (dateValue) => {
+        // Handle null, undefined, or "unknown" cases
+        if (!dateValue || dateValue === "unknown") {
             return null;
         }
-        const date = timestamp.toDate();
+
+        let date;
+
+        // Firestore Timestamp object
+        if (typeof dateValue.toDate === "function") {
+            date = dateValue.toDate();
+        }
+        // ISO 8601 string
+        else if (typeof dateValue === "string") {
+            date = new Date(dateValue);
+        }
+        // Other
+        else {
+            return null;
+        }
+
+        // Final check to ensure the created Date object is valid.
+        if (isNaN(date.getTime())) {
+            return;
+        }
+
+        // If we have a valid Date, format it as before.
         const dateOptions = { year: "numeric", month: "short", day: "numeric" };
         const timeOptions = { hour: "2-digit", minute: "2-digit", hour12: true };
         return `${date.toLocaleDateString(

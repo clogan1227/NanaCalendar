@@ -53,7 +53,13 @@ function PhotoManager({ isOpen, onClose, onUploadMultiple, onDelete, onMultiDele
     if (!isOpen) return null;
 
     // Updates the state with the files the user has selected from their computer.
-    const handleFileSelect = (e) => setFilesToUpload(Array.from(e.target.files));
+    const handleFileSelect = (event) => {
+        if (event.target.files && event.target.files.length > 0) {
+            // Convert the FileList object to a true array for safe handling.
+            const selectedFiles = Array.from(event.target.files);
+            setFilesToUpload(selectedFiles);
+        }
+    };
 
     // Triggers the upload process via the parent component and resets the file input.
     const handleUploadClick = () => {

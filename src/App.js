@@ -9,7 +9,7 @@
 import React, { useState } from "react";
 
 import EXIF from "exif-js"; // For reading metadata from image files
-import { collection, addDoc, Timestamp, doc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, setDoc, Timestamp, serverTimestamp, doc, deleteDoc } from "firebase/firestore";
 import { ref, uploadBytes, deleteObject } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid"; // For generating unique IDs
 
@@ -39,14 +39,22 @@ const parseExifData = (file) => {
         const [year, month, day] = datePart.split(":");
         const [hour, minute, second] = timePart.split(":");
         const jsDate = new Date(year, month - 1, day, hour, minute, second);
-        resolve({
+
+        const dataToResolve = {
           dateTaken: Timestamp.fromDate(jsDate),
           cameraMake: allMetaData.Make || null,
           cameraModel: allMetaData.Model || null,
-        });
+        }
+
+        resolve(dataToResolve);
       } else {
-        // Resolve with nulls if no date metadata is found in the image.
-        resolve({ dateTaken: null, cameraMake: null, cameraModel: null });
+        const dataToResolve = {
+          dateTaken: null,
+          cameraMake: allMetaData.Make || null,
+          cameraModel: allMetaData.Model || null,
+        }
+
+        resolve(dataToResolve);
       }
     });
   });
@@ -66,36 +74,49 @@ function App() {
 
   /**
      * Handles the client-side process for uploading multiple raw image files.
-     * For each file, this function parses EXIF data, attaches that data to the
-     * file as custom metadata, and uploads the raw file to a temporary
-     * 'raw-uploads/' directory in Firebase Storage. This function's sole
-     * responsibility is to get the raw file and its metadata into Storage;
-     * a Cloud Function is responsible for all subsequent processing and
-     * database entries.
+     * For each file, this function parses EXIF data, creates a firestore
+     * document with that data then uploads the raw image itself
+     * 'raw-uploads/' directory in Firebase Storage. This function's
+     * responsibility is to get the raw file into Storage and to upload
+     * the metadata to firestore; a Cloud Function is responsible for 
+     * all processing and database updates.
      * @param {File[]} files - An array of File objects from a file input element.
      */
   const handleMultipleUploads = async (files) => {
-    console.log(`Uploading ${files.length} raw files...`);
     const uploadPromises = files.map(async (file) => {
       try {
+        // Create a placeholder document in Firestore to get a unique ID.
+        const newPhotoRef = doc(collection(db, "photos"));
+        const docId = newPhotoRef.id;
+
+        // Get metadata.
         const exifData = await parseExifData(file);
 
-        const fileName = `${uuidv4()}-${file.name}`;
-        const storageRef = ref(storage, `raw-uploads/${fileName}`);
-
-        const metadata = {
-          customMetadata: {
-            dateTaken: exifData.dateTaken || "unknown",
-            cameraMake: exifData.cameraMake || "unknown",
-            cameraModel: exifData.cameraModel || "unknown",
-            originalFileName: file.name, // Keep the original name
-          },
+        // Assemble complete data object.
+        const photoDataForFirestore = {
+          id: docId,
+          status: "uploading", // initial status
+          fileName: file.name,
+          createdAt: serverTimestamp(),
+          dateTaken: exifData.dateTaken,
+          cameraMake: exifData.cameraMake,
+          cameraModel: exifData.cameraModel,
+          // leave empty for now
+          imageUrl: null,
+          storagePath: null,
         };
 
-        await uploadBytes(storageRef, file, metadata);
-        console.log(`Successfully uploaded raw file: ${file.name}`);
+        await setDoc(newPhotoRef, photoDataForFirestore);
+
+        const extension = file.name.split('.').pop() || 'jpg';
+        const fileNameInStorage = `${docId}.${extension}`;
+        const storageRef = ref(storage, `raw-uploads/${fileNameInStorage}`);
+
+        // We no longer need to attach any metadata to the upload itself.
+        await uploadBytes(storageRef, file);
+
       } catch (error) {
-        console.error(`Failed to upload raw file ${file.name}:`, error);
+        console.error(`An error occurred during the upload process.`, error);
       }
     });
 
