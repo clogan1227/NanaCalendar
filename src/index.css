@@ -112,3 +112,14 @@ code {
     max-width: 500px;
   }
 }
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+#root,
+.app-container {
+  width: 100%;
+  max-width: 100%;
+}

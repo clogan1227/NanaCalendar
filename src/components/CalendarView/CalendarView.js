@@ -256,16 +256,12 @@ function CalendarView() {
     };
 
     return (
-        <div
-            className={`calendar-container ${isPi ? "pi-mode" : ""}`}
-            style={{ height: "50%", padding: "10px" }}
-        >
+        <div className={`calendar-container ${isPi ? "pi-mode" : ""}`}>
             <Calendar
                 localizer={localizer}
                 events={allEvents}
                 startAccessor="start"
                 endAccessor="end"
-                style={{ height: "100%" }}
                 selectable={true}
                 onSelectSlot={handleSelectSlot}
                 date={date}

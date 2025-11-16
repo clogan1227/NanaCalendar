@@ -164,3 +164,11 @@
     font-weight: 600;
     color: #f8fafc;
 }
+
+.calendar-container .rbc-calendar {
+    height: 100%;
+}
+
+.web-layout .rbc-calendar {
+    height: 900px;
+}
