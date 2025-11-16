@@ -50,18 +50,40 @@
     flex-shrink: 0;
 }
 
-.photo-manager-actions button {
-    padding: 8px 15px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    background-color: #f0f0f0;
+.upload-label-button,
+.delete-button-multi {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    border-radius: 8px;
+    border: none;
     cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-.photo-manager-actions button:disabled {
+.upload-label-button {
+    background-color: #007bff;
+    color: white;
+}
+
+.upload-label-button:hover {
+    background-color: #0056b3;
+}
+
+.delete-button-multi {
+    background-color: #dc3545;
+    color: white;
+}
+
+.delete-button-multi:hover {
+    background-color: #c82333;
+}
+
+.delete-button-multi:disabled {
     background-color: #e9ecef;
     color: #6c757d;
     cursor: not-allowed;
+    transform: none;
 }
 
 .photo-manager-grid {
@@ -70,4 +92,17 @@
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 15px;
     flex-grow: 1;
+}
+
+@media (max-width: 600px) {
+    .photo-manager-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .upload-label-button,
+    .delete-button-multi {
+        text-align: center;
+    }
 }
