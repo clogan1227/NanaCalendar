@@ -93,3 +93,15 @@
     min-height: 100vh;
     padding: 2rem;
 }
+
+/* @media (max-width: 768px) {
+    .web-layout .photo-display-section {
+        height: auto;
+        aspect-ratio: 8 / 9;
+    }
+
+    .web-layout .calendar-container {
+        padding: 1rem;
+        min-height: auto;
+    }
+} */
