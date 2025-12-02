@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { isPi } from "../../config/env";
-import { endOfMonth, startOfMonth } from "date-fns";
+import { endOfMonth, startOfMonth, getDaysInMonth, addMonths, subDays } from "date-fns";
 import format from "date-fns/format";
 import getDay from "date-fns/getDay";
 import parse from "date-fns/parse";
@@ -19,6 +19,7 @@ import { Calendar, dateFnsLocalizer } from "react-big-calendar"; // The calendar
 import { RRule } from "rrule"; // For handling recurring event logic
 import { db } from "../../firebase";
 import EventCreator from "../EventCreator/EventCreator";
+import { useWindowWidth } from "../../hooks/useWindowWidth";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarView.css";
 
@@ -99,12 +100,60 @@ const CustomToolbarPi = (toolbar) => {
     );
 };
 
+/**
+ * A custom toolbar for the web view, which includes an "Add Event" button on mobile.
+ */
+const CustomToolbarWeb = ({ toolbar, onAddEvent, isMobile }) => {
+    const goToBack = () => {
+        if (isMobile) {
+            const newDate = startOfMonth(addMonths(toolbar.date, -1));
+            toolbar.onNavigate('DATE', newDate);
+        } else {
+            toolbar.onNavigate("PREV");
+        }
+    };
+    const goToNext = () => {
+        if (isMobile) {
+            const newDate = startOfMonth(addMonths(toolbar.date, 1));
+            toolbar.onNavigate('DATE', newDate);
+        } else {
+            toolbar.onNavigate("NEXT");
+        }
+    };
+    const goToCurrent = () => {
+        if (isMobile) {
+            const newDate = startOfMonth(new Date());
+            toolbar.onNavigate('DATE', newDate);
+        } else {
+            toolbar.onNavigate("TODAY");
+        }
+    };
+
+    return (
+        <div className="rbc-toolbar">
+            <span className="rbc-toolbar-label">{toolbar.label}</span>
+            <span className="rbc-btn-group">
+                {isMobile && (
+                    <button type="button" onClick={onAddEvent}>
+                        Add Event
+                    </button>
+                )}
+                <button type="button" onClick={goToBack}>Back</button>
+                <button type="button" onClick={goToCurrent}>Today</button>
+                <button type="button" onClick={goToNext}>Next</button>
+            </span>
+        </div>
+    );
+};
+
 function CalendarView() {
     const [events, setEvents] = useState([]);
     const [date, setDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [editingEvent, setEditingEvent] = useState(null);
+    const windowWidth = useWindowWidth();
+    const isMobile = windowWidth < 768;
 
     useEffect(() => {
         const eventsCollectionRef = collection(db, "events");
@@ -129,14 +178,16 @@ function CalendarView() {
         const year = date.getFullYear();
         const hd = new Holidays("US");
         const federalHolidays = hd.getHolidays(year);
-        const easterHoliday = hd.getHolidays(year).find((h) => h.name === "Easter Sunday");
+        const easterHoliday = hd
+            .getHolidays(year)
+            .find((h) => h.name === "Easter Sunday");
         if (!easterHoliday) return [];
         const easter = new Date(easterHoliday.date);
         const dayMs = 24 * 60 * 60 * 1000;
         const customHolidays = [
-            { name: "Ash Wednesday", date: new Date(easter.getTime() - 46 * dayMs) },
-            { name: "Palm Sunday", date: new Date(easter.getTime() - 7 * dayMs) },
-            { name: "Good Friday", date: new Date(easter.getTime() - 2 * dayMs) },
+            { name: "Ash Wednesday", date: subDays(easter, 46) },
+            { name: "Palm Sunday", date: subDays(easter, 7) },
+            { name: "Good Friday", date: subDays(easter, 2) },
             { name: "Easter Sunday", date: easter },
             { name: "Christmas Day", date: new Date(year, 11, 25) },
         ];
@@ -149,8 +200,13 @@ function CalendarView() {
                 ]),
             ).values(),
         );
+        const holidaysToExclude = [
+            "Day after Thanksgiving Day",
+            "Administrative Professionals Day",
+            "Independence Day (substitute day)",
+        ];
         return uniqueHolidays
-            .filter((holiday) => holiday.name !== "Day after Thanksgiving Day")
+            .filter((holiday) => !holidaysToExclude.includes(holiday.name))
             .map((holiday) => ({
                 title: holiday.name,
                 start: new Date(holiday.date),
@@ -185,6 +241,18 @@ function CalendarView() {
         return [...expandedEvents, ...holidays];
     }, [events, holidays, date]);
 
+    const agendaEvents = useMemo(() => {
+        if (!isMobile) return [];
+
+        const monthStart = startOfMonth(date);
+        const monthEnd = endOfMonth(date);
+
+        return allEvents.filter(event => {
+            const eventStart = event.start;
+            return eventStart >= monthStart && eventStart <= monthEnd;
+        });
+    }, [isMobile, allEvents, date]);
+
     const eventPropGetter = useMemo(
         () => (event) => ({
             ...(event.isHoliday && { className: "is-holiday" }),
@@ -195,17 +263,35 @@ function CalendarView() {
     const { components, formats } = useMemo(
         () => ({
             components: {
-                toolbar: isPi ? CustomToolbarPi : undefined,
+                toolbar: isPi ? CustomToolbarPi : (toolbarProps) => (
+                    <CustomToolbarWeb
+                        toolbar={toolbarProps}
+                        onAddEvent={handleAddNewEventClick}
+                        isMobile={isMobile}
+                    />
+                ),
                 header: (props) => <CustomHeader {...props} localizer={localizer} />,
-                month: { event: MonthEvent },
+                month: isMobile ? undefined : { event: MonthEvent },
             },
             formats: {
                 eventTimeRangeFormat: ({ start }, culture, localizer) =>
                     localizer.format(start, "p", culture),
+                agendaHeaderFormat: ({ start }, culture, localizer) =>
+                    localizer.format(start, "MMMM yyyy", culture),
             },
         }),
-        [],
+        [isMobile],
     );
+
+    // Handler for the new "Add Event" button on mobile
+    const handleAddNewEventClick = () => {
+        const now = new Date();
+        handleSelectSlot({
+            start: now,
+            end: now,
+            action: "click", // Mimic clicking a day slot
+        });
+    };
 
     const handleSelectSlot = (slotInfo) => {
         setEditingEvent(null);
@@ -259,7 +345,7 @@ function CalendarView() {
         <div className={`calendar-container ${isPi ? "pi-mode" : ""}`}>
             <Calendar
                 localizer={localizer}
-                events={allEvents}
+                events={isMobile ? agendaEvents : allEvents}
                 startAccessor="start"
                 endAccessor="end"
                 selectable={true}
@@ -269,7 +355,9 @@ function CalendarView() {
                 onSelectEvent={handleSelectEvent}
                 components={components}
                 formats={formats}
-                views={["month"]}
+                views={isMobile ? ["agenda"] : ["month"]}
+                defaultView={isMobile ? "agenda" : "month"}
+                length={getDaysInMonth(date)}
                 eventPropGetter={eventPropGetter}
             />
             <EventCreator

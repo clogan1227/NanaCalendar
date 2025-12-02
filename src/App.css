@@ -94,7 +94,7 @@
     padding: 2rem;
 }
 
-/* @media (max-width: 768px) {
+@media (max-width: 768px) {
     .web-layout .photo-display-section {
         height: auto;
         aspect-ratio: 8 / 9;
@@ -104,4 +104,4 @@
         padding: 1rem;
         min-height: auto;
     }
-} */
+}
