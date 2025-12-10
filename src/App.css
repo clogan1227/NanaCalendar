@@ -1,3 +1,9 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 .app-container {
     display: flex;
     flex-direction: column;
@@ -69,4 +75,45 @@
 
 .floating-upload-btn:hover {
     background: #0056b3;
+}
+
+.app-container.web-layout {
+    height: auto;
+    min-height: 100vh;
+    display: block;
+    overflow-y: auto;
+}
+
+.web-layout .photo-display-section {
+    height: 100vh;
+}
+
+.web-layout .calendar-container {
+    height: auto;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+@media (max-width: 768px) {
+    .web-layout .photo-display-section {
+        height: auto;
+        aspect-ratio: 8 / 9;
+    }
+
+    .web-layout .calendar-container {
+        padding: 1rem;
+        min-height: auto;
+    }
+}
+
+.app-container:not(.web-layout) .photo-display-section {
+    flex: 1;
+    height: 50%;
+    overflow: hidden;
+}
+
+.app-container:not(.web-layout) .calendar-container {
+    flex: 1;
+    height: 50%;
+    overflow: hidden;
 }

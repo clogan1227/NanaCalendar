@@ -21,8 +21,6 @@ function PhotoManager({ isOpen, onClose, onUploadMultiple, onDelete, onMultiDele
     const [allPhotos, setAllPhotos] = useState([]);
     // Manages the loading state while photos are being fetched.
     const [isLoading, setIsLoading] = useState(true);
-    // Stores files selected by the user from the file input before they are uploaded.
-    const [filesToUpload, setFilesToUpload] = useState([]);
     // An array of photo IDs that the user has checked for bulk deletion.
     const [selectedPhotos, setSelectedPhotos] = useState([]);
     // Holds the photo object for the PhotoDetails modal, or null if it's closed.
@@ -53,20 +51,10 @@ function PhotoManager({ isOpen, onClose, onUploadMultiple, onDelete, onMultiDele
     if (!isOpen) return null;
 
     // Updates the state with the files the user has selected from their computer.
-    const handleFileSelect = (event) => {
+    const handleFilesSelected = (event) => {
         if (event.target.files && event.target.files.length > 0) {
-            // Convert the FileList object to a true array for safe handling.
-            const selectedFiles = Array.from(event.target.files);
-            setFilesToUpload(selectedFiles);
-        }
-    };
-
-    // Triggers the upload process via the parent component and resets the file input.
-    const handleUploadClick = () => {
-        if (filesToUpload.length > 0) {
-            onUploadMultiple(filesToUpload);
-            setFilesToUpload([]);
-            document.getElementById("photo-upload-input").value = "";
+            const filesToUpload = Array.from(event.target.files);
+            onUploadMultiple(filesToUpload); // Immediately trigger the upload.
         }
     };
 
@@ -102,19 +90,21 @@ function PhotoManager({ isOpen, onClose, onUploadMultiple, onDelete, onMultiDele
 
                 <div className="photo-manager-actions">
                     <div className="upload-section">
+                        <label htmlFor="photo-upload-input" className="upload-label-button">
+                            Choose Photos to Upload
+                        </label>
                         <input
                             type="file"
                             id="photo-upload-input"
+                            style={{ display: "none" }}
                             multiple
-                            onChange={handleFileSelect}
+                            onChange={handleFilesSelected}
                             accept="image/*"
                         />
-                        <button onClick={handleUploadClick} disabled={filesToUpload.length === 0}>
-                            Upload {filesToUpload.length > 0 ? `${filesToUpload.length} Photo(s)` : ""}
-                        </button>
                     </div>
                     <div className="delete-section">
                         <button
+                            className="delete-button-multi"
                             onClick={handleDeleteSelected}
                             disabled={selectedPhotos.length === 0}
                         >

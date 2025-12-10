@@ -5,7 +5,7 @@ const {onRequest} = require("firebase-functions/v2/https");
 // Standard imports for Firebase Admin, etc.
 const {initializeApp, getApps} = require("firebase-admin/app");
 const {getFirestore} = require("firebase-admin/firestore");
-const {getStorage} = require("firebase-admin/storage");
+const {getStorage, getDownloadURL} = require("firebase-admin/storage");
 const path = require("path");
 const os = require("os");
 const fs = require("fs");
@@ -58,16 +58,15 @@ exports.processAndSavePhoto = onObjectFinalized(
             .webp({quality: 80})
             .toFile(tempNewPath);
 
-        const [uploadedFile] = await bucket.upload(tempNewPath, {
+        await bucket.upload(tempNewPath, {
           destination: newFilePath,
           metadata: {contentType: "image/webp"},
         });
         console.log("Optimized image uploaded to", newFilePath);
 
-        const downloadURL = await uploadedFile.getSignedUrl({
-          action: "read",
-          expires: "03-09-2491",
-        }).then((urls) => urls[0]);
+        const downloadURL = await getDownloadURL(
+            storage.bucket(fileBucket).file(newFilePath),
+        );
 
         // Get reference to existing document and update it.
         const photoRef = db.collection("photos").doc(docId);
@@ -166,4 +165,34 @@ exports.backfillExistingImages = onRequest(
       await Promise.all(processingPromises);
 
       res.send(`Complete. Success: ${successCount}, Errs: ${errorCount}`);
+    });
+
+exports.refreshPhotoURLs = onRequest(
+    {region: "us-west1", memory: "512MiB"}, async (req, res) => {
+      try {
+        const photosSnapshot = await db.collection("photos").get();
+        const bucketName = storage.bucket().name;
+
+        let updatedCount = 0;
+        for (const doc of photosSnapshot.docs) {
+          const photo = doc.data();
+          if (!photo.storagePath) continue;
+
+          try {
+            const downloadURL = await getDownloadURL(
+                storage.bucket(bucketName).file(photo.storagePath),
+            );
+            await doc.ref.update({imageUrl: downloadURL});
+            updatedCount++;
+          } catch (err) {
+            console.error(`Failed to refresh URL for ${doc.id}`, err.message);
+          }
+        }
+
+        console.log(`Refreshed ${updatedCount} image URLs.`);
+        res.status(200).send(`✅ Refreshed ${updatedCount} image URLs.`);
+      } catch (error) {
+        console.error("Error refreshing URLs:", error);
+        res.status(500).send("❌ Server error: " + error.message);
+      }
     });

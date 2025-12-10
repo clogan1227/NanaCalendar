@@ -158,3 +158,11 @@
         transform: rotate(360deg);
     }
 }
+
+.web-layout .photo-menu-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    opacity: 1;
+}

@@ -18,6 +18,7 @@ import MainMenu from "./components/MainMenu/MainMenu";
 import ManualEventCreator from "./components/ManualEventCreator/ManualEventCreator";
 import PhotoDisplay from "./components/PhotoDisplay/PhotoDisplay";
 import PhotoManager from "./components/PhotoManager/PhotoManager";
+import { isPi } from "./config/env.js";
 import { db, storage } from "./firebase"; // Firebase service instances
 
 import "./App.css";
@@ -223,7 +224,7 @@ function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${!isPi ? "web-layout" : ""}`}>
       <PhotoDisplay
         showMenuButton={!isOverlayOpen}
         onOpenMenu={() => setIsMainMenuOpen(true)}

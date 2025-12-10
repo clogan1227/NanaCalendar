@@ -164,3 +164,60 @@
     font-weight: 600;
     color: #f8fafc;
 }
+
+.calendar-container .rbc-calendar {
+    height: 100%;
+}
+
+.web-layout .rbc-calendar {
+    height: 900px;
+}
+
+@media (max-width: 768px) {
+    .rbc-toolbar {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .rbc-toolbar .rbc-toolbar-label {
+        font-size: calc(1.8em * var(--font-scale));
+        text-align: center;
+    }
+
+    .rbc-toolbar .rbc-btn-group {
+        gap: 10px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .rbc-btn-group button:first-child {
+        background-color: #007bff !important;
+        color: white !important;
+        font-weight: bold;
+        flex-grow: 1;
+    }
+
+    .rbc-agenda-view {
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        background-color: #ffffff;
+        color: #111827;
+    }
+
+    .rbc-agenda-view table {
+        border: none;
+    }
+
+    .rbc-agenda-table thead th {
+        font-size: 1.1em;
+        padding: 12px;
+        border-bottom: 2px solid #d1d5db;
+    }
+
+    .rbc-agenda-date-cell,
+    .rbc-agenda-time-cell {
+        padding: 12px;
+        font-size: 1.1em;
+    }
+}
