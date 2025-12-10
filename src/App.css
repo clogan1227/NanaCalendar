@@ -105,3 +105,15 @@
         min-height: auto;
     }
 }
+
+.app-container:not(.web-layout) .photo-display-section {
+    flex: 1;
+    height: 50%;
+    overflow: hidden;
+}
+
+.app-container:not(.web-layout) .calendar-container {
+    flex: 1;
+    height: 50%;
+    overflow: hidden;
+}
