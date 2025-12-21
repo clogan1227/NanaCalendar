@@ -23,7 +23,13 @@ const MAX_WIDTH = 1080;
 const MAX_HEIGHT = 960;
 
 exports.processAndSavePhoto = onObjectFinalized(
-    {region: "us-west1", memory: "512MiB"}, async (event) => {
+    {
+      region: "us-west1",
+      memory: "2GiB",
+      timeoutSeconds: 300,
+      retry: true,
+      concurrency: 1,
+    }, async (event) => {
       const fileBucket = event.data.bucket;
       const filePath = event.data.name;
       const contentType = event.data.contentType;
@@ -36,19 +42,25 @@ exports.processAndSavePhoto = onObjectFinalized(
         return null;
       }
 
-      try {
       // Extract document ID from the uploaded filename.
-        const docId = path.basename(filePath, path.extname(filePath));
+      const docId = path.basename(filePath, path.extname(filePath));
+      const newFileName = `${docId}.webp`; // Use the ID for the new name too
+      const newFilePath = `processed-images/${newFileName}`;
+
+      try {
+        const [exists] = await bucket.file(newFilePath).exists();
+        if (exists) {
+          console.log(`Img ${newFilePath} already exists-Skipping processing.`);
+          return null;
+        }
+
         console.log(`Processing photo for Firestore document ID: ${docId}`);
 
         const tempFilePath = path.join(os.tmpdir(), path.basename(filePath));
         await bucket.file(filePath).download({destination: tempFilePath});
 
         // Process the image.
-        const newFileName = `${docId}.webp`; // Use the ID for the new name too
-        const newFilePath = `processed-images/${newFileName}`;
         const tempNewPath = path.join(os.tmpdir(), newFileName);
-
         await sharp(tempFilePath)
             .rotate()
             .resize(MAX_WIDTH, MAX_HEIGHT, {

@@ -62,7 +62,7 @@ function DateTimeDisplay() {
     return (
         <div className={`"datetime-display" ${isPi ? "pi-mode" : ""}`}>
             <div className="date-display">{formatDate(currentDateTime)}</div>
-            <div className="time-display">{formatTime(currentDateTime)}</div>
+            {/* <div className="time-display">{formatTime(currentDateTime)}</div> */}
         </div>
     );
 }

@@ -74,54 +74,80 @@ function App() {
     isMainMenuOpen || isPhotoPageOpen || isAddEventPageOpen;
 
   /**
-     * Handles the client-side process for uploading multiple raw image files.
-     * For each file, this function parses EXIF data, creates a firestore
-     * document with that data then uploads the raw image itself
-     * 'raw-uploads/' directory in Firebase Storage. This function's
-     * responsibility is to get the raw file into Storage and to upload
-     * the metadata to firestore; a Cloud Function is responsible for 
-     * all processing and database updates.
-     * @param {File[]} files - An array of File objects from a file input element.
-     */
+ * Uploads a single file to Firebase Storage and creates a corresponding
+ * Firestore document. This acts as a helper function for the batch processor.
+ * It creates a document with an 'uploading' status, then initiates the
+ * raw file upload, relying on cloud triggers for final processing.
+ *
+ * @param {File} file - The individual file object to be uploaded.
+ * @returns {Promise<void>} - Resolves when the specific file is uploaded.
+ */
+  const uploadSingleFile = async (file) => {
+    try {
+      // Create a placeholder document in Firestore to get a unique ID.
+      const newPhotoRef = doc(collection(db, "photos"));
+      const docId = newPhotoRef.id;
+
+      // Get metadata.
+      const exifData = await parseExifData(file);
+
+      // Assemble complete data object.
+      const photoDataForFirestore = {
+        id: docId,
+        status: "uploading",
+        fileName: file.name,
+        createdAt: serverTimestamp(),
+        dateTaken: exifData.dateTaken || null,
+        cameraMake: exifData.cameraMake || null,
+        cameraModel: exifData.cameraModel || null,
+        imageUrl: null,
+        storagePath: null,
+      };
+
+      // Step A: Create the DB entry first
+      await setDoc(newPhotoRef, photoDataForFirestore);
+
+      // Step B: Upload the file
+      const extension = file.name.split('.').pop() || 'jpg';
+      const fileNameInStorage = `${docId}.${extension}`;
+      const storageRef = ref(storage, `raw-uploads/${fileNameInStorage}`);
+
+      await uploadBytes(storageRef, file);
+
+      console.log(`Successfully uploaded: ${file.name}`);
+
+    } catch (error) {
+      console.error(`Failed to upload ${file.name}:`, error);
+      // If upload fails, try to delete the firestore doc so it doesn't get stuck
+      // await deleteDoc(newPhotoRef);
+    }
+  };
+
+  /**
+ * Handles the client-side process for uploading multiple raw image files.
+ * For each file, this function orchestrates the creation of a firestore
+ * document and the upload of the raw image to the 'raw-uploads/' directory.
+ * To prevent network congestion and browser crashes, this function processes
+ * the files in batches (chunks) rather than all at once.
+ *
+ * @param {File[]} files - An array of File objects from a file input element.
+ */
   const handleMultipleUploads = async (files) => {
-    const uploadPromises = files.map(async (file) => {
-      try {
-        // Create a placeholder document in Firestore to get a unique ID.
-        const newPhotoRef = doc(collection(db, "photos"));
-        const docId = newPhotoRef.id;
+    const BATCH_SIZE = 5; // Process 5 images at a time
 
-        // Get metadata.
-        const exifData = await parseExifData(file);
+    // Iterate through the files array in chunks
+    for (let i = 0; i < files.length; i += BATCH_SIZE) {
+      const chunk = files.slice(i, i + BATCH_SIZE);
 
-        // Assemble complete data object.
-        const photoDataForFirestore = {
-          id: docId,
-          status: "uploading", // initial status
-          fileName: file.name,
-          createdAt: serverTimestamp(),
-          dateTaken: exifData.dateTaken,
-          cameraMake: exifData.cameraMake,
-          cameraModel: exifData.cameraModel,
-          // leave empty for now
-          imageUrl: null,
-          storagePath: null,
-        };
+      // Create an array of promises for just this chunk
+      const chunkPromises = chunk.map(file => uploadSingleFile(file));
 
-        await setDoc(newPhotoRef, photoDataForFirestore);
+      // Wait for these 5 to finish before starting the next 5
+      await Promise.all(chunkPromises);
 
-        const extension = file.name.split('.').pop() || 'jpg';
-        const fileNameInStorage = `${docId}.${extension}`;
-        const storageRef = ref(storage, `raw-uploads/${fileNameInStorage}`);
+      console.log(`Batch ${i / BATCH_SIZE + 1} completed.`);
+    }
 
-        // We no longer need to attach any metadata to the upload itself.
-        await uploadBytes(storageRef, file);
-
-      } catch (error) {
-        console.error(`An error occurred during the upload process.`, error);
-      }
-    });
-
-    await Promise.all(uploadPromises);
     console.log("All raw file uploads finished.");
   };
 
