@@ -16,7 +16,7 @@ import InfoOverlay from "../InfoOverlay/InfoOverlay";
 import "./PhotoDisplay.css";
 
 // Defines the duration each photo is visible in the slideshow, in milliseconds.
-const SLIDESHOW_VISIBLE_DURATION_MS = 10000; // 10 seconds
+const SLIDESHOW_VISIBLE_DURATION_MS = 60000; // 60 seconds
 
 // Fisher-Yates shuffling algorithm used to randomize photo order
 function shuffleArray(array) {
